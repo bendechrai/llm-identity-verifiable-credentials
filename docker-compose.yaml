@@ -139,6 +139,20 @@ services:
     networks:
       - demo-network
 
+  # Ralph - Autonomous Claude Code runner
+  ralph:
+    build:
+      context: .
+      dockerfile: Dockerfile.ralph
+    environment:
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    volumes:
+      - .:/home/ralph/project
+    working_dir: /home/ralph/project
+    networks:
+      - demo-network
+
 networks:
   demo-network:
     driver: bridge
