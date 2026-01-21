@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  # VC Issuer - Issues employment and finance approver credentials
+  vc-issuer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: vc-issuer
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+    volumes:
+      - ./src/vc-issuer:/app/src
+      - ./shared:/app/shared
+      - issuer-keys:/app/keys
+    networks:
+      - demo-network
+
+  # VC Wallet - Stores credentials, creates Verifiable Presentations
+  vc-wallet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: vc-wallet
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - ISSUER_URL=http://vc-issuer:3001
+    volumes:
+      - ./src/vc-wallet:/app/src
+      - ./shared:/app/shared
+      - wallet-keys:/app/keys
+    depends_on:
+      - vc-issuer
+    networks:
+      - demo-network
+
+  # Auth Server - Verifies VPs, issues constrained JWTs (trust boundary)
+  auth-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: auth-server
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - ISSUER_URL=http://vc-issuer:3001
+      - TOKEN_EXPIRY_SECONDS=60
+    volumes:
+      - ./src/auth-server:/app/src
+      - ./shared:/app/shared
+      - auth-keys:/app/keys
+    depends_on:
+      - vc-issuer
+    networks:
+      - demo-network
+
+  # Expense API - Pure resource server (validates JWTs, enforces ceiling)
+  expense-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: expense-api
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - AUTH_SERVER_URL=http://auth-server:3003
+    volumes:
+      - ./src/expense-api:/app/src
+      - ./shared:/app/shared
+    depends_on:
+      - auth-server
+    networks:
+      - demo-network
+
+  # LLM Agent - Orchestrates the authorization flow
+  llm-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: llm-agent
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - LLM_MODE=${LLM_MODE:-mock}
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - AUTH_SERVER_URL=http://auth-server:3003
+      - EXPENSE_API_URL=http://expense-api:3005
+      - WALLET_URL=http://vc-wallet:3002
+    volumes:
+      - ./src/llm-agent:/app/src
+      - ./shared:/app/shared
+    depends_on:
+      - auth-server
+      - expense-api
+      - vc-wallet
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - demo-network
+
+  # Demo UI - Presentation interface
+  demo-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - LLM_AGENT_URL=http://llm-agent:3004
+      - AUTH_SERVER_URL=http://auth-server:3003
+      - EXPENSE_API_URL=http://expense-api:3005
+      - WALLET_URL=http://vc-wallet:3002
+    volumes:
+      - ./src/demo-ui:/app/src
+      - ./shared:/app/shared
+    depends_on:
+      - llm-agent
+    networks:
+      - demo-network
+
+networks:
+  demo-network:
+    driver: bridge
+
+volumes:
+  issuer-keys:
+  wallet-keys:
+  auth-keys:
