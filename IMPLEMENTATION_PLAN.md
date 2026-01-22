@@ -87,6 +87,7 @@ Solution implemented in `document-loader.ts`:
 - Fixed JSON-LD validation for custom credential properties (see above)
 - Fixed integration test JWT verification to use `keyPair.verifier()` instead of passing KeyPair directly
 - Added missing `jti` (JWT ID) fields to test JWT payloads
+- Cleaned up unused imports in test files (expense.test.ts, e2e.test.ts, integration.test.ts) to resolve ESLint errors
 
 ---
 
