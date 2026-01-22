@@ -511,17 +511,11 @@ describe('Integration: Authorization Flow Logic', () => {
 });
 
 /**
- * These tests require running services.
- * Run with: docker-compose up && npm run test:integration
+ * End-to-End tests against running services are in e2e.test.ts
  *
- * Skip these tests in CI without running services by checking
- * for INTEGRATION_TEST environment variable.
+ * Run with: docker-compose up && npm test
+ *
+ * The E2E tests automatically detect whether services are running
+ * and skip gracefully if they're not available. See src/lib/e2e.test.ts
+ * for the implementation.
  */
-describe.skip('Integration: End-to-End with Services', () => {
-  // These tests would hit the actual running services
-  // Skipped by default - enable when services are running
-
-  it.todo('should complete happy path flow against running services');
-  it.todo('should enforce ceiling against running expense-api');
-  it.todo('should demonstrate social engineering resistance');
-});
