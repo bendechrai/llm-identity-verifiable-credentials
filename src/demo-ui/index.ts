@@ -1,0 +1,41 @@
+/**
+ * Demo UI Service
+ *
+ * Serves the static demo UI for the presentation.
+ * Single HTML file with embedded CSS/JS - no build step required.
+ *
+ * Port: 3000
+ */
+
+import express from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  createApp,
+  startServer,
+} from '../lib/index.js';
+
+const PORT = parseInt(process.env.PORT || '3000', 10);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function main() {
+  const app = createApp('demo-ui');
+
+  // Serve static files from public directory
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  // Serve index.html for all non-API routes
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+
+  // Start server
+  startServer(app, PORT, 'demo-ui');
+}
+
+main().catch((error) => {
+  console.error('[Demo UI] Failed to start:', error);
+  process.exit(1);
+});

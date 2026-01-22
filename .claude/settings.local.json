@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node build.js:*)",
+      "WebSearch",
+      "WebFetch(domain:openid.net)",
+      "WebFetch(domain:www.w3.org)",
+      "WebFetch(domain:genai.owasp.org)",
+      "WebFetch(domain:owasp.org)",
+      "WebFetch(domain:www.indusface.com)",
+      "WebFetch(domain:cloudsecurityalliance.org)",
+      "WebFetch(domain:datatracker.ietf.org)",
+      "WebFetch(domain:cybercompliancewatch.org)",
+      "WebFetch(domain:sovrin.org)",
+      "WebFetch(domain:w3c-ccg.github.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:eur-lex.europa.eu)",
+      "WebFetch(domain:artificialintelligenceact.eu)",
+      "WebFetch(domain:ai-act-service-desk.ec.europa.eu)",
+      "WebFetch(domain:www.linuxfoundation.org)",
+      "WebFetch(domain:stripe.com)",
+      "WebFetch(domain:investor.visa.com)",
+      "WebFetch(domain:jamanetwork.com)",
+      "WebFetch(domain:trustoverip.org)",
+      "WebFetch(domain:www.gleif.org)",
+      "WebFetch(domain:w3c.github.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(chmod:*)"
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-# Dockerfile for React frontend
+# Dockerfile for Demo UI frontend
 FROM node:20-alpine
 
 WORKDIR /app
@@ -9,16 +9,22 @@ COPY package.json package-lock.json* ./
 # Install dependencies
 RUN npm install
 
+# Copy TypeScript config
+COPY tsconfig.json ./
+
 # Copy shared code
 COPY shared/ ./shared/
 
 # Copy UI code
-COPY src/demo-ui/ ./src/
+COPY src/demo-ui/ ./src/demo-ui/
 
-WORKDIR /app/src
+# Copy shared library
+COPY src/lib/ ./src/lib/
+
+WORKDIR /app/src/demo-ui
 
 # Expose port
 EXPOSE 3000
 
-# Development server
-CMD ["npm", "run", "dev"]
+# Use tsx to run the TypeScript server
+CMD ["npx", "tsx", "index.ts"]

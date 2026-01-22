@@ -1,0 +1,10 @@
+{
+  "name": "@llm-demo/auth-server",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.ts",
+  "private": true,
+  "dependencies": {
+    "@llm-demo/lib": "*"
+  }
+}
