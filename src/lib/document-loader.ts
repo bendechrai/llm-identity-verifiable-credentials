@@ -7,8 +7,12 @@
  */
 
 import * as Ed25519Multikey from '@digitalbazaar/ed25519-multikey';
-import credentialsContext from '@digitalbazaar/credentials-context';
-import dataIntegrityContext from '@digitalbazaar/data-integrity-context';
+import * as credentialsContext from '@digitalbazaar/credentials-context';
+import * as dataIntegrityContext from '@digitalbazaar/data-integrity-context';
+
+// Type assertions for context modules (they expose Map with contexts)
+const credentialsContexts = (credentialsContext as unknown as { contexts: Map<string, object> }).contexts;
+const dataIntegrityContexts = (dataIntegrityContext as unknown as { contexts: Map<string, object> }).contexts;
 
 // VC 2.0 context URL
 const VC_CONTEXT_URL = 'https://www.w3.org/ns/credentials/v2';
@@ -79,10 +83,10 @@ const MULTIKEY_CONTEXT = {
 
 // Bundled contexts map
 const BUNDLED_CONTEXTS: Record<string, object> = {
-  [VC_CONTEXT_URL]: credentialsContext.contexts.get(VC_CONTEXT_URL)!,
+  [VC_CONTEXT_URL]: credentialsContexts.get(VC_CONTEXT_URL)!,
   [DID_CONTEXT_URL]: DID_CONTEXT,
   [MULTIKEY_CONTEXT_URL]: MULTIKEY_CONTEXT,
-  [DATA_INTEGRITY_CONTEXT_URL]: dataIntegrityContext.contexts.get(DATA_INTEGRITY_CONTEXT_URL)!,
+  [DATA_INTEGRITY_CONTEXT_URL]: dataIntegrityContexts.get(DATA_INTEGRITY_CONTEXT_URL)!,
 };
 
 /**

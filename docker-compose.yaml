@@ -19,6 +19,12 @@ services:
       - issuer-keys:/app/keys
     networks:
       - demo-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # VC Wallet - Stores credentials, creates Verifiable Presentations
   vc-wallet:
@@ -38,9 +44,16 @@ services:
       - ./shared:/app/shared
       - wallet-keys:/app/keys
     depends_on:
-      - vc-issuer
+      vc-issuer:
+        condition: service_healthy
     networks:
       - demo-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Auth Server - Verifies VPs, issues constrained JWTs (trust boundary)
   auth-server:
@@ -61,9 +74,16 @@ services:
       - ./shared:/app/shared
       - auth-keys:/app/keys
     depends_on:
-      - vc-issuer
+      vc-issuer:
+        condition: service_healthy
     networks:
       - demo-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Expense API - Pure resource server (validates JWTs, enforces ceiling)
   expense-api:
@@ -82,9 +102,16 @@ services:
       - ./src/expense-api:/app/src
       - ./shared:/app/shared
     depends_on:
-      - auth-server
+      auth-server:
+        condition: service_healthy
     networks:
       - demo-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3005/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # LLM Agent - Orchestrates the authorization flow
   llm-agent:
@@ -109,13 +136,22 @@ services:
       - ./src/llm-agent:/app/src
       - ./shared:/app/shared
     depends_on:
-      - auth-server
-      - expense-api
-      - vc-wallet
+      auth-server:
+        condition: service_healthy
+      expense-api:
+        condition: service_healthy
+      vc-wallet:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - demo-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Demo UI - Presentation interface
   demo-ui:
@@ -135,9 +171,16 @@ services:
       - ./src/demo-ui:/app/src
       - ./shared:/app/shared
     depends_on:
-      - llm-agent
+      llm-agent:
+        condition: service_healthy
     networks:
       - demo-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Ralph - Autonomous Claude Code runner
   ralph:

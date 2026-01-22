@@ -29,9 +29,19 @@ export interface KeyPair {
 /**
  * Generate a new Ed25519 key pair using multikey format.
  * The key can be used for signing VCs and deriving did:key identifiers.
+ *
+ * Sets up the id and controller properties needed for signing VCs.
+ * - controller: the did:key derived from the public key
+ * - id: the verification method ID (controller#publicKeyMultibase)
  */
 export async function generateEd25519KeyPair(): Promise<KeyPair> {
   const keyPair = await Ed25519Multikey.generate();
+
+  // Set controller (the DID) and id (verification method) for VC signing
+  const controller = `did:key:${keyPair.publicKeyMultibase}`;
+  keyPair.controller = controller;
+  keyPair.id = `${controller}#${keyPair.publicKeyMultibase}`;
+
   return keyPair as KeyPair;
 }
 
