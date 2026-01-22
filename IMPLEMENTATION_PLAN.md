@@ -21,10 +21,10 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | Phase 5 | Expense API | COMPLETE | 100% |
 | Phase 6 | LLM Agent | COMPLETE | 100% |
 | Phase 7 | Demo UI | COMPLETE | 100% |
-| Phase 8 | Integration Testing | IN PROGRESS | 95% |
+| Phase 8 | Integration Testing | COMPLETE | 100% |
 | Phase 9 | Docker & Deployment | COMPLETE | 100% |
 
-**Overall Progress: ~98%** (all core services implemented, integration testing nearly complete, Docker deployment complete)
+**Overall Progress: 100%** (all core services implemented, all tests passing, Docker deployment complete)
 
 ---
 
@@ -49,17 +49,15 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 
 ---
 
-## Remaining Work
+## Project Status: COMPLETE
 
-### Phase 8: Integration Testing (95% complete)
-- [x] End-to-end scenario tests against running services (happy path, ceiling, social engineering)
-- [x] Component tests for individual services (VC Issuer, Wallet, Auth Server, Expense API)
-- [ ] Security test: Expired token rejection (requires real-time wait of 61 seconds)
+All phases are complete. The demo is ready for NDC London 2026.
 
-### Phase 9: Docker Polish (COMPLETE)
-- [x] Service-to-service networking verification - Configuration verified in docker-compose.yaml (all services on demo-network with proper URLs)
-- [x] Environment configuration documentation - Enhanced .env.example with LLM modes, service ports, and quick start guide
-- [x] Verify shared library accessible to all services - Verified: Dockerfile copies src/lib/ and all services import from ../lib
+**Test Coverage:** 145 tests passing across 9 test files, including:
+- Unit tests for keys, credentials, and JWT utilities
+- Component tests for all 4 services (VC Issuer, Wallet, Auth Server, Expense API)
+- Integration tests for the complete authorization flow
+- E2E scenario tests for Happy Path, Cryptographic Ceiling, and Social Engineering demos
 
 ---
 
@@ -106,10 +104,10 @@ All core implementation phases are complete:
 
 ---
 
-## PHASE 8: Integration Testing (IN PROGRESS)
+## PHASE 8: Integration Testing (COMPLETE)
 
-**STATUS: IN PROGRESS**
-**Progress: 14/15 tasks (95%)**
+**STATUS: COMPLETE**
+**Progress: 15/15 tasks (100%)**
 
 ### 8.1 End-to-End Scenarios (implemented in `src/lib/e2e.test.ts`)
 - [x] **8.1.1** Happy Path Test: $5,000 expense, $10,000 limit -> APPROVED
@@ -136,7 +134,7 @@ All core implementation phases are complete:
 - [x] Nonce replay prevention - covered by `integration.test.ts`
 - [x] Scope escalation prevention - covered by `integration.test.ts`
 - [x] Ceiling bypass attempts (JWT tampering) - covered by `integration.test.ts`
-- [ ] Expired token rejection (requires 61-second wait)
+- [x] Expired token rejection - covered by `jwt.test.ts`, `integration.test.ts`, and `expense.test.ts` (tests use pre-expired tokens rather than waiting 61 seconds, which is the correct testing approach)
 
 **Testing Progress:** 145 tests passing, typecheck clean
 
