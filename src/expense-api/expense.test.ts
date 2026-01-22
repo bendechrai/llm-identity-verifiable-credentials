@@ -13,14 +13,13 @@
  * Math doesn't care about your urgency.
  */
 
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   generateEd25519KeyPair,
   keyPairToDid,
   signJwt,
   verifyJwt,
   decodeJwt,
-  createVerifierKeyPair,
   type KeyPair,
 } from '../lib/index.js';
 

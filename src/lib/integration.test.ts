@@ -15,7 +15,7 @@
  * - Tests can be run with: npm run test:integration
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   generateEd25519KeyPair,
   keyPairToDid,

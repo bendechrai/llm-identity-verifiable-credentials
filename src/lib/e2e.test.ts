@@ -18,7 +18,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { createHttpClient, type HttpClient, type HttpError } from './http-client.js';
+import { createHttpClient, type HttpClient } from './http-client.js';
 
 // Service URLs - these match docker-compose.yaml
 const AGENT_URL = process.env.AGENT_URL || 'http://localhost:3004';
