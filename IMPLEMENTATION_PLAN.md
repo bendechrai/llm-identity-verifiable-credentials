@@ -21,10 +21,10 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | Phase 5 | Expense API | COMPLETE | 100% |
 | Phase 6 | LLM Agent | COMPLETE | 100% |
 | Phase 7 | Demo UI | COMPLETE | 100% |
-| Phase 8 | Integration Testing | IN PROGRESS | 67% |
+| Phase 8 | Integration Testing | IN PROGRESS | 90% |
 | Phase 9 | Docker & Deployment | IN PROGRESS | 70% |
 
-**Overall Progress: ~92%** (all core services implemented, integration testing in progress, Docker deployment mostly complete)
+**Overall Progress: ~95%** (all core services implemented, integration testing nearly complete, Docker deployment mostly complete)
 
 ---
 
@@ -51,9 +51,9 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 
 ## Remaining Work
 
-### Phase 8: Integration Testing (67% complete)
+### Phase 8: Integration Testing (90% complete)
 - [ ] End-to-end scenario tests against running services (happy path, ceiling, social engineering)
-- [ ] Component tests for individual services (VC Issuer, Wallet, Auth Server, Expense API)
+- [x] Component tests for individual services (VC Issuer, Wallet, Auth Server, Expense API)
 - [ ] Security test: Expired token rejection (requires real-time wait of 61 seconds)
 
 ### Phase 9: Docker Polish (70% complete)
@@ -108,7 +108,7 @@ All core implementation phases are complete:
 ## PHASE 8: Integration Testing (IN PROGRESS)
 
 **STATUS: IN PROGRESS**
-**Progress: 10/15 tasks (67%)**
+**Progress: 14/15 tasks (90%)**
 
 ### 8.1 End-to-End Scenarios
 - [ ] **8.1.1** Happy Path Test: $5,000 expense, $10,000 limit -> APPROVED
@@ -121,11 +121,11 @@ All core implementation phases are complete:
 - [x] Key management (`src/lib/keys.test.ts`) - 6 tests passing
 - [x] Integration tests (`src/lib/integration.test.ts`) - 19 tests passing
 
-### 8.2 Component Tests (Remaining)
-- [ ] VC Issuer service tests
-- [ ] VC Wallet service tests
-- [ ] Auth Server service tests
-- [ ] Expense API service tests
+### 8.2 Component Tests (Service-Level)
+- [x] VC Issuer service tests - `src/vc-issuer/issuer.test.ts` (21 tests)
+- [x] VC Wallet service tests - `src/vc-wallet/wallet.test.ts` (18 tests)
+- [x] Auth Server service tests - `src/auth-server/auth.test.ts` (21 tests)
+- [x] Expense API service tests - `src/expense-api/expense.test.ts` (26 tests)
 
 ### 8.3 Security Tests
 - [x] Invalid signature rejection - covered by `credentials.test.ts`
@@ -135,7 +135,7 @@ All core implementation phases are complete:
 - [x] Ceiling bypass attempts (JWT tampering) - covered by `integration.test.ts`
 - [ ] Expired token rejection (requires 61-second wait)
 
-**Testing Progress:** 47 tests passing, 3 skipped (todo), typecheck clean
+**Testing Progress:** 133 tests passing, 3 skipped (todo), typecheck clean
 
 ---
 
