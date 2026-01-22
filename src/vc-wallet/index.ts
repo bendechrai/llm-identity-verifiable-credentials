@@ -270,11 +270,36 @@ async function main() {
         message: string;
       }>('/demo/issue-alice-credentials', { holderDid });
 
-      // Store the credentials
+      // Verify and store the credentials
       for (const credential of response.credentials) {
+        // Verify credential signature
+        const verificationResult = await verifyCredential(credential);
+        if (!verificationResult.verified) {
+          console.error(`[VC Wallet] Failed to verify credential: ${credential.type.join(', ')}`);
+          res.status(400).json({
+            error: 'invalid_credential',
+            message: `Demo setup failed: credential verification failed for ${credential.type.join(', ')}`,
+            details: verificationResult.error,
+          });
+          return;
+        }
+
+        // Verify holder binding
+        const subjectId = (credential.credentialSubject as { id?: string }).id;
+        if (subjectId && subjectId !== holderDid) {
+          console.error(`[VC Wallet] Holder mismatch for credential: ${credential.type.join(', ')}`);
+          res.status(400).json({
+            error: 'holder_mismatch',
+            message: 'Demo setup failed: credential subject ID does not match wallet holder DID',
+            expected: holderDid,
+            received: subjectId,
+          });
+          return;
+        }
+
         const credentialId = getCredentialId(credential);
         credentialStore.set(credentialId, credential);
-        console.log(`[VC Wallet] Stored credential: ${credential.type.join(', ')}`);
+        console.log(`[VC Wallet] Verified and stored credential: ${credential.type.join(', ')}`);
       }
 
       // Get approval limit from FinanceApproverCredential

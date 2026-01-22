@@ -88,6 +88,10 @@ Solution implemented in `document-loader.ts`:
 - Fixed integration test JWT verification to use `keyPair.verifier()` instead of passing KeyPair directly
 - Added missing `jti` (JWT ID) fields to test JWT payloads
 - Cleaned up unused imports in test files (expense.test.ts, e2e.test.ts, integration.test.ts) to resolve ESLint errors
+- Demo UI: Added Escape key handler to clear input (required by spec for keyboard shortcuts)
+- Demo UI: Updated authorization flow step labels to match spec ("Request Nonce", "Create VP", "Verify & Issue Token", "Call API", "Ceiling Enforced")
+- VC Issuer: Added `authentication` array to DID document at `/.well-known/did.json` (required by spec)
+- VC Wallet: Added credential verification in `/wallet/demo/setup` endpoint to verify signature and holder binding before storing (improved security model)
 
 ---
 

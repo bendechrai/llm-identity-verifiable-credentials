@@ -212,6 +212,7 @@ async function main() {
         },
       ],
       assertionMethod: [verificationMethodId],
+      authentication: [verificationMethodId],
     };
 
     res.json(didDocument);

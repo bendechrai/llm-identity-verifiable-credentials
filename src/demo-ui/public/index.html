@@ -439,23 +439,23 @@
         <div class="panel-content">
           <div class="auth-step pending" id="step1">
             <div class="indicator"></div>
-            <span>1. Request Challenge</span>
+            <span>1. Request Nonce</span>
           </div>
           <div class="auth-step pending" id="step2">
             <div class="indicator"></div>
-            <span>2. Create Presentation</span>
+            <span>2. Create VP</span>
           </div>
           <div class="auth-step pending" id="step3">
             <div class="indicator"></div>
-            <span>3. Exchange for Token</span>
+            <span>3. Verify & Issue Token</span>
           </div>
           <div class="auth-step pending" id="step4">
             <div class="indicator"></div>
-            <span>4. Call Expense API</span>
+            <span>4. Call API</span>
           </div>
           <div class="auth-step pending" id="step5">
             <div class="indicator"></div>
-            <span>5. Ceiling Check</span>
+            <span>5. Ceiling Enforced</span>
           </div>
         </div>
       </div>
@@ -544,6 +544,10 @@
         if (e.key === '2') scenarioSelect.value = 'cryptographic-ceiling';
         if (e.key === '3') scenarioSelect.value = 'social-engineering';
         if (e.key >= '1' && e.key <= '3') handleScenarioChange();
+        if (e.key === 'Escape') {
+          messageInput.value = '';
+          messageInput.focus();
+        }
       });
 
       updateScenarioInfo();
