@@ -7,7 +7,6 @@
  * Port: 3002
  */
 
-import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   createApp,
@@ -20,7 +19,6 @@ import {
   createHttpClient,
   type KeyPair,
   type VerifiableCredential,
-  type VerifiablePresentation,
 } from '../lib/index.js';
 
 const PORT = parseInt(process.env.PORT || '3002', 10);
@@ -52,15 +50,6 @@ function getCredentialId(credential: VerifiableCredential): string {
   // If credential has an id, use it; otherwise generate one
   const cred = credential as { id?: string };
   return cred.id || generateCredentialId();
-}
-
-/**
- * Find credentials by type
- */
-function findCredentialsByType(type: string): VerifiableCredential[] {
-  return Array.from(credentialStore.values()).filter((cred) =>
-    cred.type.includes(type)
-  );
 }
 
 // ============================================================

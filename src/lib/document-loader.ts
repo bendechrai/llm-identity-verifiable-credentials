@@ -6,7 +6,6 @@
  * Implements did:key resolution to derive DID documents from public keys.
  */
 
-import * as Ed25519Multikey from '@digitalbazaar/ed25519-multikey';
 import * as credentialsContext from '@digitalbazaar/credentials-context';
 import * as dataIntegrityContext from '@digitalbazaar/data-integrity-context';
 

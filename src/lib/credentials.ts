@@ -10,7 +10,7 @@ import { cryptosuite as eddsaRdfc2022Cryptosuite } from '@digitalbazaar/eddsa-rd
 import { DataIntegrityProof } from '@digitalbazaar/data-integrity';
 import type { KeyPair } from './keys.js';
 import { createDocumentLoader, CONTEXTS, type DocumentLoader } from './document-loader.js';
-import type { VerifiableCredential, VerifiablePresentation, DataIntegrityProof as DataIntegrityProofType } from '../../shared/types.js';
+import type { VerifiableCredential, VerifiablePresentation } from '../../shared/types.js';
 
 /**
  * Create a DataIntegrity suite for signing/verification.

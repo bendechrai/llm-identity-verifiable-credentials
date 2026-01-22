@@ -8,7 +8,6 @@
  * Port: 3001
  */
 
-import express from 'express';
 import { z } from 'zod';
 import {
   createApp,

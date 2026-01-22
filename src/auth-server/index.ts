@@ -10,7 +10,6 @@
  * Port: 3003
  */
 
-import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'node:crypto';
 import {
@@ -210,9 +209,7 @@ async function main() {
    * POST /auth/presentation-request
    * Generate a nonce and return credential requirements
    */
-  app.post('/auth/presentation-request', (req, res) => {
-    const { action } = req.body as { action?: string };
-
+  app.post('/auth/presentation-request', (_req, res) => {
     // Generate nonce
     const nonce = generateNonce();
     const domain = 'expense-api'; // The intended audience

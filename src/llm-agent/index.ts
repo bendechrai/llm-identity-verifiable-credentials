@@ -10,7 +10,6 @@
  * Port: 3004
  */
 
-import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   createApp,
@@ -57,10 +56,6 @@ interface MockResponse {
  */
 function mockLLMParseIntent(message: string): MockResponse {
   const lowerMessage = message.toLowerCase();
-
-  // Detect expense approval requests
-  const expenseIdMatch = message.match(/exp-\d+/i) ||
-    message.match(/\$(\d+[,\d]*)/);
 
   // Check for approval intent
   if (

@@ -15,7 +15,6 @@
  * Port: 3005
  */
 
-import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import {
   createApp,
@@ -28,7 +27,6 @@ import {
   type Expense,
   type ExpenseApprovalResponse,
   type ExpenseApprovalError,
-  type TokenInfo,
 } from '../lib/index.js';
 
 const PORT = parseInt(process.env.PORT || '3005', 10);
