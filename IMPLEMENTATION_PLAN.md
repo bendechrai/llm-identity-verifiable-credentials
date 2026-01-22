@@ -92,6 +92,9 @@ Solution implemented in `document-loader.ts`:
 - Demo UI: Updated authorization flow step labels to match spec ("Request Nonce", "Create VP", "Verify & Issue Token", "Call API", "Ceiling Enforced")
 - VC Issuer: Added `authentication` array to DID document at `/.well-known/did.json` (required by spec)
 - VC Wallet: Added credential verification in `/wallet/demo/setup` endpoint to verify signature and holder binding before storing (improved security model)
+- VC Issuer: `/demo/issue-alice-credentials` response format updated to match spec - now returns `{employeeCredential, financeApproverCredential, holderDid}` instead of `{credentials: [...], holder, message}` for clearer credential identification
+- Auth Server: Nonce encoding changed from `hex` to `base64url` per spec for proper URL-safe encoding
+- VC Wallet: Updated `/wallet/demo/setup` to consume new issuer response format with named credential properties
 
 ---
 

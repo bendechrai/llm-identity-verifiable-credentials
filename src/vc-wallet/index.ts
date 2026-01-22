@@ -265,13 +265,16 @@ async function main() {
       const issuerClient = createHttpClient(ISSUER_URL);
 
       const response = await issuerClient.post<{
-        credentials: VerifiableCredential[];
-        holder: string;
-        message: string;
+        employeeCredential: VerifiableCredential;
+        financeApproverCredential: VerifiableCredential;
+        holderDid: string;
       }>('/demo/issue-alice-credentials', { holderDid });
 
+      // Convert to array for easier processing
+      const credentials = [response.employeeCredential, response.financeApproverCredential];
+
       // Verify and store the credentials
-      for (const credential of response.credentials) {
+      for (const credential of credentials) {
         // Verify credential signature
         const verificationResult = await verifyCredential(credential);
         if (!verificationResult.verified) {
@@ -303,16 +306,11 @@ async function main() {
       }
 
       // Get approval limit from FinanceApproverCredential
-      const financeCredential = response.credentials.find((c) =>
-        c.type.includes('FinanceApproverCredential')
-      );
-      const approvalLimit = financeCredential
-        ? (financeCredential.credentialSubject as { approvalLimit?: number }).approvalLimit
-        : undefined;
+      const approvalLimit = (response.financeApproverCredential.credentialSubject as { approvalLimit?: number }).approvalLimit;
 
       res.json({
         holder: holderDid,
-        credentials: response.credentials.map((c) => ({
+        credentials: credentials.map((c) => ({
           type: c.type,
           issuer: c.issuer,
         })),

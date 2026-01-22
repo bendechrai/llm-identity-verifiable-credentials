@@ -263,9 +263,9 @@ async function main() {
       );
 
       res.json({
-        credentials: [employeeCredential, financeCredential],
-        holder: holderDid,
-        message: 'Issued EmployeeCredential and FinanceApproverCredential for Alice',
+        employeeCredential,
+        financeApproverCredential: financeCredential,
+        holderDid,
       });
     } catch (error) {
       next(error);

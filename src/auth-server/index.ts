@@ -62,9 +62,10 @@ const auditLogger = createAuditLogger();
 
 /**
  * Generate a cryptographically random nonce (144 bits = 18 bytes)
+ * Uses base64url encoding per spec
  */
 function generateNonce(): string {
-  return crypto.randomBytes(18).toString('hex');
+  return crypto.randomBytes(18).toString('base64url');
 }
 
 /**

@@ -41,7 +41,7 @@ interface NonceEntry {
 const NONCE_TTL_SECONDS = 300; // 5 minutes
 
 function generateNonce(): string {
-  return crypto.randomBytes(18).toString('hex');
+  return crypto.randomBytes(18).toString('base64url');
 }
 
 function storeNonce(
@@ -175,9 +175,10 @@ describe('Auth Server: Nonce Generation', () => {
   it('should generate 144-bit (18 byte) random nonces', () => {
     const nonce = generateNonce();
 
-    // 18 bytes = 36 hex characters
-    expect(nonce.length).toBe(36);
-    expect(/^[a-f0-9]+$/.test(nonce)).toBe(true);
+    // 18 bytes = 24 base64url characters (18 * 8 / 6 = 24)
+    expect(nonce.length).toBe(24);
+    // base64url uses alphanumeric + hyphen + underscore (no padding in this case)
+    expect(/^[A-Za-z0-9_-]+$/.test(nonce)).toBe(true);
   });
 
   it('should generate unique nonces', () => {
