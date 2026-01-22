@@ -39,6 +39,7 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | `Dockerfile.ui` | **COMPLETE** | Updated with dev script |
 | `package.json` | **COMPLETE** | VC 2.0 packages installed correctly |
 | `tsconfig.json` | **COMPLETE** | TypeScript configuration created |
+| `.eslintrc.cjs` | **COMPLETE** | TypeScript parser with namespace support |
 | `src/lib/` | **COMPLETE** | All utilities implemented (keys, document-loader, credentials, jwt, middleware, audit, http-client) |
 | `src/vc-issuer/` | **COMPLETE** | Issues EmployeeCredential and FinanceApproverCredential |
 | `src/vc-wallet/` | **COMPLETE** | Stores credentials, creates VPs with challenge/domain |
