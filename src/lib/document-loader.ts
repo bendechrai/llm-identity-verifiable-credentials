@@ -19,6 +19,8 @@ const VC_CONTEXT_URL = 'https://www.w3.org/ns/credentials/v2';
 const DID_CONTEXT_URL = 'https://www.w3.org/ns/did/v1';
 const MULTIKEY_CONTEXT_URL = 'https://w3id.org/security/multikey/v1';
 const DATA_INTEGRITY_CONTEXT_URL = 'https://w3id.org/security/data-integrity/v2';
+// Custom context for demo credential properties
+const DEMO_CONTEXT_URL = 'https://demo.example.com/credentials/v1';
 
 // DID context definition
 const DID_CONTEXT = {
@@ -45,6 +47,36 @@ const DID_CONTEXT = {
       '@type': '@id',
       '@container': '@set',
     },
+  },
+};
+
+// Custom demo context definition - defines all custom credential properties
+// This context allows JSON-LD to properly process our EmployeeCredential and FinanceApproverCredential
+const DEMO_CONTEXT = {
+  '@context': {
+    '@protected': true,
+    // Credential types
+    EmployeeCredential: 'https://demo.example.com/credentials#EmployeeCredential',
+    FinanceApproverCredential: 'https://demo.example.com/credentials#FinanceApproverCredential',
+    // Person and Organization types (schema.org style)
+    Person: 'https://schema.org/Person',
+    Organization: 'https://schema.org/Organization',
+    // Employee credential properties
+    name: 'https://schema.org/name',
+    employeeId: 'https://demo.example.com/credentials#employeeId',
+    jobTitle: 'https://schema.org/jobTitle',
+    department: 'https://demo.example.com/credentials#department',
+    worksFor: {
+      '@id': 'https://schema.org/worksFor',
+      '@type': '@id',
+    },
+    // Finance approver credential properties
+    role: 'https://demo.example.com/credentials#role',
+    approvalLimit: {
+      '@id': 'https://demo.example.com/credentials#approvalLimit',
+      '@type': 'https://www.w3.org/2001/XMLSchema#integer',
+    },
+    currency: 'https://demo.example.com/credentials#currency',
   },
 };
 
@@ -87,6 +119,7 @@ const BUNDLED_CONTEXTS: Record<string, object> = {
   [DID_CONTEXT_URL]: DID_CONTEXT,
   [MULTIKEY_CONTEXT_URL]: MULTIKEY_CONTEXT,
   [DATA_INTEGRITY_CONTEXT_URL]: dataIntegrityContexts.get(DATA_INTEGRITY_CONTEXT_URL)!,
+  [DEMO_CONTEXT_URL]: DEMO_CONTEXT,
 };
 
 /**
@@ -216,4 +249,5 @@ export const CONTEXTS = {
   DID_V1: DID_CONTEXT_URL,
   MULTIKEY_V1: MULTIKEY_CONTEXT_URL,
   DATA_INTEGRITY_V2: DATA_INTEGRITY_CONTEXT_URL,
+  DEMO_V1: DEMO_CONTEXT_URL,
 };

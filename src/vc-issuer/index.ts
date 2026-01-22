@@ -65,8 +65,9 @@ async function createEmployeeCredential(
   jobTitle: string,
   department: string
 ): Promise<VerifiableCredential> {
+  // Include DEMO_V1 context for custom properties (name, employeeId, jobTitle, department, etc.)
   const unsignedCredential: UnsignedCredential = {
-    '@context': [CONTEXTS.VC_V2],
+    '@context': [CONTEXTS.VC_V2, CONTEXTS.DEMO_V1],
     type: ['VerifiableCredential', 'EmployeeCredential'],
     issuer: issuerDid,
     validFrom: new Date().toISOString(),
@@ -96,8 +97,9 @@ async function createFinanceApproverCredential(
   approvalLimit: number,
   department: string
 ): Promise<VerifiableCredential> {
+  // Include DEMO_V1 context for custom properties (role, approvalLimit, currency, department)
   const unsignedCredential: UnsignedCredential = {
-    '@context': [CONTEXTS.VC_V2],
+    '@context': [CONTEXTS.VC_V2, CONTEXTS.DEMO_V1],
     type: ['VerifiableCredential', 'FinanceApproverCredential'],
     issuer: issuerDid,
     validFrom: new Date().toISOString(),

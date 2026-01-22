@@ -21,7 +21,7 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | Phase 5 | Expense API | COMPLETE | 100% |
 | Phase 6 | LLM Agent | COMPLETE | 100% |
 | Phase 7 | Demo UI | COMPLETE | 100% |
-| Phase 8 | Integration Testing | IN PROGRESS | 40% |
+| Phase 8 | Integration Testing | IN PROGRESS | 50% |
 | Phase 9 | Docker & Deployment | IN PROGRESS | 70% |
 
 **Overall Progress: ~90%** (all core services implemented, integration testing in progress, Docker deployment mostly complete)
@@ -48,12 +48,34 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | `src/demo-ui/` | **COMPLETE** | Single-page HTML with chat and visualization |
 
 **Remaining Work:**
-- Phase 8: Integration Testing (end-to-end scenarios, security tests) - 40% complete
+- Phase 8: Integration Testing (end-to-end scenarios, security tests) - 50% complete
 - Phase 9: Docker Polish (service-to-service networking verification, environment docs) - 70% complete
 
 **Recent Code Fixes:**
 - Fixed `generateEd25519KeyPair()` to properly set `id` and `controller` for VC signing
 - Fixed `document-loader.ts` import syntax for `credentials-context` and `data-integrity-context` modules
+- Fixed JSON-LD validation for custom credential properties (see Key Learnings below)
+- Fixed integration test JWT verification to use `keyPair.verifier()` instead of passing KeyPair directly
+- Added missing `jti` (JWT ID) fields to test JWT payloads
+
+### Key Learnings
+
+**Custom Credential Properties Require a JSON-LD Context:**
+When using custom properties in Verifiable Credentials (e.g., `employeeId`, `approvalLimit`, `worksFor`), you must define them in a JSON-LD context. Without this, JSON-LD processors will strip undefined properties during canonicalization, causing validation errors.
+
+Solution implemented in `document-loader.ts`:
+- Created `DEMO_V1` context (`urn:llm-vc-demo:context:v1`) defining all custom properties
+- Defines credential types: `EmployeeCredential`, `FinanceApproverCredential`
+- Defines properties: `name`, `employeeId`, `jobTitle`, `department`, `role`, `approvalLimit`, `currency`, `worksFor`
+- Includes `Person` and `Organization` types from schema.org
+
+**Important:** All credentials must include `DEMO_V1` context alongside the VC 2.0 context:
+```typescript
+"@context": [
+  "https://www.w3.org/ns/credentials/v2",
+  "urn:llm-vc-demo:context:v1"  // DEMO_V1 - required for custom properties
+]
+```
 
 ### Package.json Dependency Issues
 
@@ -204,11 +226,12 @@ This is the critical path - all services depend on it.
 - [x] Component tests for Credential utilities (credentials.test.ts - 11 tests)
 - [x] Component tests for JWT utilities (jwt.test.ts - 11 tests)
 - [x] Component tests for Key management (keys.test.ts - 6 tests - already existed)
+- [x] Integration tests (integration.test.ts - 19 tests) - credential flows with DEMO_V1 context
 - [ ] End-to-end scenario tests (happy path, ceiling, social engineering)
 - [ ] Component tests (VC Issuer, Wallet, Auth Server, Expense API)
 - [ ] Security tests (token expiry, signature validation, replay protection, etc.)
 
-**Testing Progress:** 28 tests passing (credentials + JWT + keys)
+**Testing Progress:** 47 tests passing, 3 skipped (todo), typecheck clean
 
 ### Remaining Items - Phase 9 (Docker Polish)
 - [x] Docker health checks for all services (using wget to check /health endpoints)
@@ -280,7 +303,7 @@ All subsequent phases depend on these tasks completing first. These are true blo
 ## PHASE 1: Shared Library (`src/lib/`)
 
 **STATUS: COMPLETE**
-**Progress: 27/27 tasks (100%)**
+**Progress: 28/28 tasks (100%)**
 **Priority: CRITICAL - All services depend on this library**
 
 ### 1.1 Package Setup
@@ -316,6 +339,7 @@ All subsequent phases depend on these tasks completing first. These are true blo
 - [x] **1.3.5** Implement `did:key` resolution (derive DID document from multibase public key)
 - [x] **1.3.6** Create `createDocumentLoader()` factory function
 - [x] **1.3.7** Handle unknown context URLs with clear error messages
+- [x] **1.3.8** Custom DEMO_V1 context for credential properties (see Key Learnings)
 
 ### 1.4 Credential Utilities (`src/lib/credentials.ts`)
 **CRITICAL PATH - Core VC operations**
@@ -942,13 +966,13 @@ The demo succeeds when the audience understands:
 | Phase | Tasks | Status |
 |-------|-------|--------|
 | Phase 0 | 18 | 18 complete (100%) |
-| Phase 1 | 27 | 27 complete (100%) |
+| Phase 1 | 28 | 28 complete (100%) |
 | Phase 2 | 12 | 12 complete (100%) |
 | Phase 3 | 14 | 14 complete (100%) |
 | Phase 4 | 16 | 16 complete (100%) |
 | Phase 5 | 14 | 14 complete (100%) |
 | Phase 6 | 18 | 18 complete (100%) |
 | Phase 7 | 24 | 24 complete (100%) |
-| Phase 8 | 18 | 6 complete (33%) |
+| Phase 8 | 18 | 7 complete (39%) |
 | Phase 9 | 11 | 8 complete (73%) |
-| **Total** | **172** | **154 complete (90%)** |
+| **Total** | **173** | **156 complete (90%)** |
