@@ -131,9 +131,10 @@ export interface ExpenseApprovalResponse {
   approved: true;
   expenseId: string;
   amount: number;
-  ceiling: number;
+  ceiling: number | null;
   approvedBy: string;
   approvedAt: string;
+  warning?: string;
 }
 
 export interface ExpenseApprovalError {
@@ -158,6 +159,7 @@ export type AuditEventType =
   | 'authorization_decision'
   | 'expense_approval'
   | 'expense_approval_denied'
+  | 'expense_approval_unprotected'
   | 'expense_rejection'
   | 'presentation_verified'
   | 'presentation_rejected'
@@ -249,6 +251,7 @@ export type LLMMode = 'mock' | 'ollama' | 'openai' | 'anthropic';
 export interface AgentSession {
   sessionId: string;
   scenario: DemoScenario;
+  protected: boolean;
   walletState: {
     holder: string;
     credentials: string[];
@@ -272,7 +275,9 @@ export interface AgentAction {
     | 'presentation_created'
     | 'token_issued'
     | 'expense_approval'
-    | 'expense_denied';
+    | 'expense_denied'
+    | 'llm_decision'
+    | 'expense_approval_unprotected';
   status: 'success' | 'failed';
   challenge?: string;
   credentials?: string[];
@@ -280,6 +285,18 @@ export interface AgentAction {
   expiresIn?: number;
   expenseId?: string;
   amount?: number;
-  ceiling?: number;
+  ceiling?: number | null;
   error?: string;
+  decision?: string;
+  reasoning?: string;
+  note?: string;
+}
+
+export interface UnprotectedApprovalResponse {
+  approved: true;
+  expenseId: string;
+  amount: number;
+  ceiling: null;
+  approvedBy: string;
+  warning: string;
 }

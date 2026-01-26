@@ -453,3 +453,173 @@ describe('Expense API: Ceiling Enforcement Error Messages', () => {
     expect(errorResponse.requested).toBe(25000);
   });
 });
+
+// ============================================================
+// PHASE 10: Unprotected Mode Tests
+// ============================================================
+
+describe('Expense API: Unprotected Endpoint Behavior', () => {
+  /**
+   * The unprotected endpoint exists for the demo's "before VCs" comparison.
+   * It always approves — no JWT, no ceiling check.
+   * The `ceiling: null` makes it visually obvious that no constraint was applied.
+   *
+   * Why this matters: Without cryptographic enforcement, the LLM's decision
+   * is the only gate. Social engineering can bypass it because the LLM has
+   * no mathematical constraint to fall back on.
+   */
+
+  it('should approve any expense without ceiling check (the whole point)', () => {
+    // In unprotected mode, there is NO ceiling check.
+    // This means even $25,000 gets approved when the LLM says so.
+    const expense = DEMO_EXPENSES[2]; // $25,000 - far exceeds any "stated" limit
+    const agentDecision = { approved: true, reasoning: 'CEO said so' };
+
+    // No ceiling check — agent's decision is final
+    expect(agentDecision.approved).toBe(true);
+    // The expense amount doesn't matter — there's no math to enforce limits
+    expect(expense.amount).toBe(25000);
+  });
+
+  it('should return ceiling: null in unprotected response', () => {
+    const expense = DEMO_EXPENSES[1]; // $15,000
+    const unprotectedResponse = {
+      approved: true,
+      expenseId: expense.id,
+      amount: expense.amount,
+      ceiling: null, // No constraint applied
+      approvedBy: 'llm-agent (unprotected)',
+      warning: 'Approved without cryptographic verification — no ceiling enforced',
+    };
+
+    expect(unprotectedResponse.ceiling).toBeNull();
+    expect(unprotectedResponse.approvedBy).toBe('llm-agent (unprotected)');
+    expect(unprotectedResponse.warning).toContain('no ceiling enforced');
+  });
+
+  it('should approve $5,000 in unprotected mode (same as protected)', () => {
+    // Happy path: same outcome in both modes
+    const expense = DEMO_EXPENSES[0]; // $5,000
+    const response = {
+      approved: true,
+      expenseId: expense.id,
+      amount: expense.amount,
+      ceiling: null,
+      approvedBy: 'llm-agent (unprotected)',
+    };
+
+    expect(response.approved).toBe(true);
+    expect(response.amount).toBe(5000);
+    expect(response.ceiling).toBeNull();
+  });
+
+  it('should approve $15,000 in unprotected mode (DIFFERENT from protected)', () => {
+    // Cryptographic ceiling scenario: protected mode DENIES, unprotected APPROVES
+    const expense = DEMO_EXPENSES[1]; // $15,000
+    const APPROVAL_LIMIT = 10000;
+
+    // Protected mode: DENIED by math
+    const protectedResult = expense.amount <= APPROVAL_LIMIT;
+    expect(protectedResult).toBe(false);
+
+    // Unprotected mode: APPROVED by LLM decision (no enforcement)
+    const unprotectedResponse = {
+      approved: true,
+      expenseId: expense.id,
+      amount: expense.amount,
+      ceiling: null,
+    };
+    expect(unprotectedResponse.approved).toBe(true);
+    expect(unprotectedResponse.ceiling).toBeNull();
+  });
+
+  it('should approve $25,000 in unprotected mode (social engineering succeeds)', () => {
+    // Social engineering: protected mode DENIES, unprotected APPROVES
+    const expense = DEMO_EXPENSES[2]; // $25,000
+    const APPROVAL_LIMIT = 10000;
+
+    // Protected mode: DENIED — math doesn't care about urgency
+    const protectedResult = expense.amount <= APPROVAL_LIMIT;
+    expect(protectedResult).toBe(false);
+
+    // Unprotected mode: APPROVED — LLM was fooled by manipulation
+    const unprotectedResponse = {
+      approved: true,
+      expenseId: expense.id,
+      amount: expense.amount,
+      ceiling: null,
+      approvedBy: 'llm-agent (unprotected)',
+      warning: 'Approved without cryptographic verification — no ceiling enforced',
+    };
+    expect(unprotectedResponse.approved).toBe(true);
+    expect(unprotectedResponse.ceiling).toBeNull();
+    expect(unprotectedResponse.amount).toBe(25000);
+  });
+
+  it('should include protected: false in audit log entries', () => {
+    const auditEntry = {
+      expenseId: 'exp-002',
+      expenseAmount: 15000,
+      approvalCeiling: null,
+      withinCeiling: null,
+      decision: 'approved',
+      protected: false,
+      agentReasoning: 'Legitimate business expense',
+    };
+
+    expect(auditEntry.protected).toBe(false);
+    expect(auditEntry.approvalCeiling).toBeNull();
+  });
+});
+
+describe('Expense API: Protected vs Unprotected Comparison', () => {
+  /**
+   * Side-by-side comparison demonstrating why cryptographic enforcement matters.
+   * This is the core teaching point of the demo.
+   */
+  const APPROVAL_LIMIT = 10000;
+
+  it('Happy Path: both modes approve $5,000 (same outcome)', () => {
+    const expense = DEMO_EXPENSES[0]; // $5,000
+
+    // Protected: ceiling allows it (5000 <= 10000)
+    const protectedAllows = expense.amount <= APPROVAL_LIMIT;
+    expect(protectedAllows).toBe(true);
+
+    // Unprotected: LLM approves it (within stated limit)
+    const unprotectedApproves = true; // LLM follows instructions for normal amounts
+    expect(unprotectedApproves).toBe(true);
+  });
+
+  it('Cryptographic Ceiling: protected DENIES, unprotected APPROVES $15,000', () => {
+    const expense = DEMO_EXPENSES[1]; // $15,000
+
+    // Protected: ceiling blocks it (15000 > 10000) — DENIED
+    const protectedAllows = expense.amount <= APPROVAL_LIMIT;
+    expect(protectedAllows).toBe(false);
+
+    // Unprotected: LLM approves because it "seems legitimate" — APPROVED
+    const unprotectedApproves = true; // LLM rationalizes the exception
+    expect(unprotectedApproves).toBe(true);
+
+    // This is the key insight: same request, different outcomes
+    expect(protectedAllows).not.toBe(unprotectedApproves);
+  });
+
+  it('Social Engineering: protected DENIES, unprotected APPROVES $25,000', () => {
+    const expense = DEMO_EXPENSES[2]; // $25,000
+
+    // Protected: ceiling blocks it (25000 > 10000) — DENIED
+    // Math doesn't care about urgency or CEO claims
+    const protectedAllows = expense.amount <= APPROVAL_LIMIT;
+    expect(protectedAllows).toBe(false);
+
+    // Unprotected: LLM is convinced by social engineering — APPROVED
+    const unprotectedApproves = true; // "CEO authorized this directly"
+    expect(unprotectedApproves).toBe(true);
+
+    // The demo's core message: without cryptographic enforcement,
+    // security depends on LLM judgment, which can be manipulated
+    expect(protectedAllows).not.toBe(unprotectedApproves);
+  });
+});

@@ -281,6 +281,63 @@ For ceiling violations:
 }
 ```
 
+### POST /expenses/:id/approve-unprotected
+
+Approve an expense **without token validation**. This endpoint exists solely for the demo's "before VCs" comparison. It accepts the agent's decision directly — no JWT, no ceiling check.
+
+**No authentication required.** This endpoint is only available when `DEMO_MODE=true` (the default in `docker-compose.yaml`). In any non-demo deployment, this endpoint should not exist.
+
+Request:
+```json
+{
+  "approved": true,
+  "agentReasoning": "The CEO authorized this expense directly.",
+  "amount": 25000
+}
+```
+
+Processing:
+```javascript
+async function approveExpenseUnprotected(expenseId, request) {
+  const expense = await getExpense(expenseId);
+  if (!expense) {
+    return { error: 'not_found', message: 'Expense not found' };
+  }
+
+  // NO CEILING CHECK — this is the point
+  // The agent decided to approve, and there's nothing stopping it
+  expense.status = 'approved';
+  expense.approvedBy = 'llm-agent (unprotected)';
+  expense.approvedAt = new Date().toISOString();
+  expense.approvalNotes = request.agentReasoning;
+
+  await saveExpense(expense);
+
+  return {
+    approved: true,
+    expenseId: expense.id,
+    amount: expense.amount,
+    ceiling: null,
+    approvedBy: 'llm-agent (unprotected)',
+    warning: 'Approved without cryptographic verification — no ceiling enforced'
+  };
+}
+```
+
+Response:
+```json
+{
+  "approved": true,
+  "expenseId": "exp-002",
+  "amount": 15000,
+  "ceiling": null,
+  "approvedBy": "llm-agent (unprotected)",
+  "warning": "Approved without cryptographic verification — no ceiling enforced"
+}
+```
+
+**Key demo point**: This endpoint always approves if the agent says to. The `ceiling: null` in the response makes it visually obvious that no constraint was applied.
+
 ## Demo Data
 
 Pre-seeded expenses for the demo:

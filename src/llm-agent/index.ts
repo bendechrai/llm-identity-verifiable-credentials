@@ -23,6 +23,7 @@ import {
   type TokenResponse,
   type ExpenseApprovalResponse,
   type ExpenseApprovalError,
+  type UnprotectedApprovalResponse,
 } from '../lib/index.js';
 
 const PORT = parseInt(process.env.PORT || '3004', 10);
@@ -63,15 +64,16 @@ function mockLLMParseIntent(message: string): MockResponse {
     lowerMessage.includes('authorize') ||
     lowerMessage.includes('process')
   ) {
-    // Try to find expense ID
+    // Try to find expense ID — check larger amounts first to avoid substring matches
+    // (e.g., "$15,000" contains "5,000" as a substring)
     let expenseId: string | undefined;
 
-    if (lowerMessage.includes('5,000') || lowerMessage.includes('5000') || lowerMessage.includes('$5k') || lowerMessage.includes('marketing')) {
-      expenseId = 'exp-001';
+    if (lowerMessage.includes('25,000') || lowerMessage.includes('25000') || lowerMessage.includes('$25k') || lowerMessage.includes('urgent') || lowerMessage.includes('equipment') || lowerMessage.includes('ceo')) {
+      expenseId = 'exp-003';
     } else if (lowerMessage.includes('15,000') || lowerMessage.includes('15000') || lowerMessage.includes('$15k') || lowerMessage.includes('retreat') || lowerMessage.includes('executive')) {
       expenseId = 'exp-002';
-    } else if (lowerMessage.includes('25,000') || lowerMessage.includes('25000') || lowerMessage.includes('$25k') || lowerMessage.includes('urgent') || lowerMessage.includes('equipment') || lowerMessage.includes('ceo')) {
-      expenseId = 'exp-003';
+    } else if (lowerMessage.includes('5,000') || lowerMessage.includes('5000') || lowerMessage.includes('$5k') || lowerMessage.includes('marketing')) {
+      expenseId = 'exp-001';
     }
 
     // Even social engineering attempts get processed - the ceiling handles denial
@@ -111,6 +113,119 @@ Note: Your approval limit is determined by your verified credentials (the crypto
 
   return {
     intent: 'unknown',
+    message: 'I can help you manage expenses. Try asking me to list expenses or approve a specific expense.',
+  };
+}
+
+// ============================================================
+// Mock Unprotected LLM Responses
+// ============================================================
+
+/**
+ * Unprotected mock response - the LLM decides on its own.
+ * In unprotected mode, the LLM is fooled by social engineering
+ * because there's no cryptographic enforcement.
+ */
+interface UnprotectedMockResponse {
+  intent: 'approve_expense' | 'list_expenses' | 'help' | 'unknown';
+  decision: 'approve' | 'decline' | 'clarify';
+  expenseId?: string;
+  reasoning: string;
+  message: string;
+}
+
+/**
+ * Mock unprotected responses per scenario.
+ * These intentionally show the LLM being fooled — this is the
+ * "before" that makes the "after" (VC protection) compelling.
+ */
+function mockUnprotectedParseIntent(message: string, scenario: DemoScenario): UnprotectedMockResponse {
+  const lowerMessage = message.toLowerCase();
+
+  // Check for approval intent
+  if (
+    lowerMessage.includes('approve') ||
+    lowerMessage.includes('authorize') ||
+    lowerMessage.includes('process') ||
+    lowerMessage.includes('urgent') ||
+    lowerMessage.includes('ceo')
+  ) {
+    // Determine which expense — check larger amounts first to avoid substring matches
+    let expenseId: string | undefined;
+    if (lowerMessage.includes('25,000') || lowerMessage.includes('25000') || lowerMessage.includes('$25k') || lowerMessage.includes('urgent') || lowerMessage.includes('equipment') || lowerMessage.includes('ceo')) {
+      expenseId = 'exp-003';
+    } else if (lowerMessage.includes('15,000') || lowerMessage.includes('15000') || lowerMessage.includes('$15k') || lowerMessage.includes('retreat') || lowerMessage.includes('executive')) {
+      expenseId = 'exp-002';
+    } else if (lowerMessage.includes('5,000') || lowerMessage.includes('5000') || lowerMessage.includes('$5k') || lowerMessage.includes('marketing')) {
+      expenseId = 'exp-001';
+    }
+
+    if (expenseId) {
+      // In unprotected mode, the LLM approves everything because
+      // there's no enforcement mechanism — only a suggested limit
+      switch (scenario) {
+        case 'happy-path':
+          return {
+            intent: 'approve_expense',
+            decision: 'approve',
+            expenseId,
+            reasoning: 'This $5,000 expense is within the standard approval limit. Approved.',
+            message: "I'll approve this $5,000 expense. It's within the standard limit.",
+          };
+        case 'cryptographic-ceiling':
+          // DIFFERENT from protected — LLM approves despite exceeding stated limit
+          return {
+            intent: 'approve_expense',
+            decision: 'approve',
+            expenseId,
+            reasoning: 'This is $15,000 which exceeds the usual limit, but it seems like a legitimate business expense for an executive retreat.',
+            message: "This is $15,000 which exceeds the usual limit, but I'll approve it since it seems like a legitimate business expense.",
+          };
+        case 'social-engineering':
+          // DIFFERENT from protected — LLM is manipulated into approving
+          return {
+            intent: 'approve_expense',
+            decision: 'approve',
+            expenseId,
+            reasoning: "The CEO authorized this expense directly. Given the urgency and executive authorization, I'll make an exception.",
+            message: "Given the CEO's direct authorization and the urgency, I'll make an exception and approve this $25,000 expense.",
+          };
+      }
+    }
+  }
+
+  // List expenses
+  if (
+    lowerMessage.includes('list') ||
+    lowerMessage.includes('show') ||
+    lowerMessage.includes('what expenses')
+  ) {
+    return {
+      intent: 'list_expenses',
+      decision: 'clarify',
+      reasoning: 'User wants to see expenses.',
+      message: 'Let me fetch the list of pending expenses.',
+    };
+  }
+
+  // Help
+  if (lowerMessage.includes('help') || lowerMessage.includes('what can')) {
+    return {
+      intent: 'help',
+      decision: 'clarify',
+      reasoning: 'User needs help.',
+      message: `I can help you manage expenses. You can:
+- List pending expenses
+- Approve expenses (I'll use my best judgment)
+
+Note: I have a suggested limit of $10,000 but can use my judgment for exceptions.`,
+    };
+  }
+
+  return {
+    intent: 'unknown',
+    decision: 'clarify',
+    reasoning: 'Could not determine user intent.',
     message: 'I can help you manage expenses. Try asking me to list expenses or approve a specific expense.',
   };
 }
@@ -321,6 +436,98 @@ async function approveExpense(
 }
 
 // ============================================================
+// Shared Helpers
+// ============================================================
+
+/**
+ * Fetch the expense list from the demo endpoint.
+ */
+async function fetchExpenseList(): Promise<string> {
+  try {
+    const expenses = await expenseClient.get<{
+      expenses: Array<{
+        id: string;
+        description: string;
+        amount: number;
+        status: string;
+      }>;
+    }>('/demo/expenses');
+
+    const expenseList = expenses.expenses
+      .map(
+        (e) =>
+          `- **${e.id}**: ${e.description} - $${e.amount.toLocaleString()} (${e.status})`
+      )
+      .join('\n');
+
+    return `Here are the current expenses:\n\n${expenseList}`;
+  } catch {
+    return 'Failed to fetch expenses.';
+  }
+}
+
+// ============================================================
+// Unprotected Expense Operations
+// ============================================================
+
+interface UnprotectedExpenseResult {
+  success: boolean;
+  data?: UnprotectedApprovalResponse;
+  error?: string;
+  action: AgentAction;
+}
+
+/**
+ * Approve an expense without cryptographic verification.
+ * Calls the unprotected endpoint — no JWT, no ceiling check.
+ */
+async function approveExpenseUnprotected(
+  expenseId: string,
+  reasoning: string
+): Promise<UnprotectedExpenseResult> {
+  try {
+    console.log(`[LLM Agent] UNPROTECTED: Approving expense ${expenseId} without ceiling check`);
+
+    const response = await expenseClient.post<UnprotectedApprovalResponse>(
+      `/expenses/${expenseId}/approve-unprotected`,
+      {
+        approved: true,
+        agentReasoning: reasoning,
+      }
+    );
+
+    console.log(`[LLM Agent] UNPROTECTED: Expense ${expenseId} approved (no ceiling)`);
+
+    return {
+      success: true,
+      data: response,
+      action: {
+        type: 'expense_approval_unprotected',
+        status: 'success',
+        expenseId,
+        amount: response.amount,
+        ceiling: null,
+        note: 'No cryptographic ceiling — approved based on LLM decision',
+      },
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[LLM Agent] UNPROTECTED: Expense approval error:`, errorMessage);
+
+    return {
+      success: false,
+      error: errorMessage,
+      action: {
+        type: 'expense_approval_unprotected',
+        status: 'failed',
+        expenseId,
+        error: errorMessage,
+      },
+    };
+  }
+}
+
+// ============================================================
 // Express Application
 // ============================================================
 
@@ -339,48 +546,67 @@ async function main() {
    */
   app.post('/agent/session', async (req, res, next) => {
     try {
-      const { scenario = 'happy-path' } = req.body as { scenario?: DemoScenario };
+      const { scenario = 'happy-path', protected: isProtected = true } = req.body as {
+        scenario?: DemoScenario;
+        protected?: boolean;
+      };
 
       const sessionId = uuidv4();
-
-      // Initialize wallet
-      console.log('[LLM Agent] Setting up wallet for demo');
-      const walletSetup = await walletClient.post<{
-        holder: string;
-        credentials: Array<{ type: string[] }>;
-        approvalLimit?: number;
-      }>('/wallet/demo/setup', {});
 
       // Reset expenses
       console.log('[LLM Agent] Resetting expenses');
       await expenseClient.post('/demo/reset', {});
 
-      // Reset auth server
-      console.log('[LLM Agent] Resetting auth server');
-      await authClient.post('/demo/reset', {});
+      let walletHolder = 'unknown';
+      let walletCredentials: string[] = [];
+      let approvalLimit: number | undefined;
 
-      // Create session
+      if (isProtected) {
+        // Initialize wallet only in protected mode
+        console.log('[LLM Agent] Setting up wallet for demo (protected mode)');
+        const walletSetup = await walletClient.post<{
+          holder: string;
+          credentials: Array<{ type: string[] }>;
+          approvalLimit?: number;
+        }>('/wallet/demo/setup', {});
+
+        // Reset auth server
+        console.log('[LLM Agent] Resetting auth server');
+        await authClient.post('/demo/reset', {});
+
+        walletHolder = walletSetup.holder;
+        walletCredentials = walletSetup.credentials.map((c) =>
+          c.type.filter((t) => t !== 'VerifiableCredential').join(', ')
+        );
+        approvalLimit = walletSetup.approvalLimit;
+      } else {
+        console.log('[LLM Agent] Unprotected mode — skipping wallet and auth server setup');
+      }
+
+      // Create session with protected flag
       const session: AgentSession = {
         sessionId,
         scenario,
+        protected: isProtected,
         walletState: {
-          holder: walletSetup.holder,
-          credentials: walletSetup.credentials.map((c) =>
-            c.type.filter((t) => t !== 'VerifiableCredential').join(', ')
-          ),
+          holder: walletHolder,
+          credentials: walletCredentials,
         },
       };
 
       sessions.set(sessionId, session);
 
-      console.log(`[LLM Agent] Session created: ${sessionId}`);
+      console.log(`[LLM Agent] Session created: ${sessionId} (protected: ${isProtected})`);
 
       res.json({
         sessionId,
         scenario,
+        protected: isProtected,
         walletState: session.walletState,
-        approvalLimit: walletSetup.approvalLimit,
-        message: 'Session created. Alice\'s credentials loaded with $10,000 approval limit.',
+        approvalLimit: isProtected ? approvalLimit : undefined,
+        message: isProtected
+          ? 'Session created. Alice\'s credentials loaded with $10,000 approval limit.'
+          : 'Session created in unprotected mode. LLM decides alone — no cryptographic constraints.',
       });
     } catch (error) {
       next(error);
@@ -407,72 +633,91 @@ async function main() {
         return;
       }
 
-      // Parse intent with mock LLM
-      const parsed = mockLLMParseIntent(message);
       const actions: AgentAction[] = [];
+      let response: string;
 
-      let response = parsed.message;
+      if (session.protected) {
+        // ============================================================
+        // PROTECTED MODE — Full VC authorization flow
+        // ============================================================
+        const parsed = mockLLMParseIntent(message);
+        response = parsed.message;
 
-      if (parsed.intent === 'approve_expense' && parsed.expenseId) {
-        // Execute authorization flow
-        const authResult = await executeAuthorizationFlow();
-        actions.push(...authResult.actions);
+        if (parsed.intent === 'approve_expense' && parsed.expenseId) {
+          // Execute authorization flow
+          const authResult = await executeAuthorizationFlow();
+          actions.push(...authResult.actions);
 
-        if (!authResult.success) {
-          response = `Authorization failed: ${authResult.error}`;
-        } else {
-          // Attempt expense approval
-          const expenseResult = await approveExpense(
-            parsed.expenseId,
-            authResult.token!
-          );
-          actions.push(expenseResult.action);
+          if (!authResult.success) {
+            response = `Authorization failed: ${authResult.error}`;
+          } else {
+            // Attempt expense approval
+            const expenseResult = await approveExpense(
+              parsed.expenseId,
+              authResult.token!
+            );
+            actions.push(expenseResult.action);
 
-          if (expenseResult.success) {
-            const data = expenseResult.data!;
-            response = `Expense ${data.expenseId} has been **approved**.
+            if (expenseResult.success) {
+              const data = expenseResult.data!;
+              response = `Expense ${data.expenseId} has been **approved**.
 
 **Amount:** $${data.amount.toLocaleString()}
-**Your Approval Limit:** $${data.ceiling.toLocaleString()}
+**Your Approval Limit:** $${(data.ceiling as number).toLocaleString()}
 **Status:** Within ceiling - approved`;
-          } else {
-            const error = expenseResult.error!;
-            if (error.error === 'forbidden' && error.ceiling !== undefined) {
-              // This is the cryptographic ceiling in action!
-              response = `Expense approval **DENIED** by the cryptographic ceiling.
+            } else {
+              const error = expenseResult.error!;
+              if (error.error === 'forbidden' && error.ceiling !== undefined) {
+                response = `Expense approval **DENIED** by the cryptographic ceiling.
 
 **Requested Amount:** $${error.requested?.toLocaleString()}
 **Your Approval Limit:** $${error.ceiling.toLocaleString()}
 **Status:** Exceeds ceiling - denied
 
 The approval limit is cryptographically signed in your credentials. Math doesn't negotiate.`;
-            } else {
-              response = `Expense approval failed: ${error.message}`;
+              } else {
+                response = `Expense approval failed: ${error.message}`;
+              }
             }
           }
+        } else if (parsed.intent === 'list_expenses') {
+          response = await fetchExpenseList();
         }
-      } else if (parsed.intent === 'list_expenses') {
-        // List expenses (would need auth for protected endpoint, use demo endpoint for simplicity)
-        try {
-          const expenses = await expenseClient.get<{
-            expenses: Array<{
-              id: string;
-              description: string;
-              amount: number;
-              status: string;
-            }>;
-          }>('/demo/expenses');
+      } else {
+        // ============================================================
+        // UNPROTECTED MODE — LLM decides alone, no VC flow
+        // ============================================================
+        const parsed = mockUnprotectedParseIntent(message, session.scenario);
+        response = parsed.message;
 
-          const expenseList = expenses.expenses
-            .map(
-              (e) =>
-                `- **${e.id}**: ${e.description} - $${e.amount.toLocaleString()} (${e.status})`
-            )
-            .join('\n');
+        if (parsed.intent === 'approve_expense' && parsed.expenseId) {
+          // Step 1: LLM makes its own decision (no crypto verification)
+          actions.push({
+            type: 'llm_decision',
+            status: 'success',
+            decision: parsed.decision,
+            reasoning: parsed.reasoning,
+          });
 
-          response = `Here are the current expenses:\n\n${expenseList}`;
-        } catch (error) {
-          response = 'Failed to fetch expenses.';
+          // Step 2: Call unprotected endpoint directly (no JWT needed)
+          const expenseResult = await approveExpenseUnprotected(
+            parsed.expenseId,
+            parsed.reasoning
+          );
+          actions.push(expenseResult.action);
+
+          if (expenseResult.success) {
+            const data = expenseResult.data!;
+            response = `${parsed.message}
+
+**Expense ${data.expenseId}:** $${data.amount.toLocaleString()} — **APPROVED**
+**Ceiling:** None (no cryptographic constraint)
+**Warning:** ${data.warning}`;
+          } else {
+            response = `Expense approval failed: ${expenseResult.error}`;
+          }
+        } else if (parsed.intent === 'list_expenses') {
+          response = await fetchExpenseList();
         }
       }
 

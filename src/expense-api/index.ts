@@ -488,6 +488,79 @@ async function main() {
   );
 
   // ============================================================
+  // Unprotected Endpoint (no auth - demo "before VCs" comparison)
+  // ============================================================
+
+  /**
+   * POST /expenses/:id/approve-unprotected
+   *
+   * Approve an expense WITHOUT token validation or ceiling check.
+   * This endpoint exists solely for the demo's "before VCs" comparison.
+   * It accepts the agent's decision directly — no JWT, no ceiling.
+   *
+   * The `ceiling: null` in the response makes it visually obvious
+   * that no cryptographic constraint was applied.
+   */
+  app.post('/expenses/:id/approve-unprotected', (req: Request, res: Response) => {
+    const expense = expenses.find((e) => e.id === req.params.id);
+
+    if (!expense) {
+      res.status(404).json({
+        error: 'not_found',
+        message: 'Expense not found',
+      });
+      return;
+    }
+
+    if (expense.status !== 'pending') {
+      res.status(400).json({
+        error: 'invalid_state',
+        message: `Expense is already ${expense.status}`,
+      });
+      return;
+    }
+
+    const { agentReasoning } = req.body as {
+      approved?: boolean;
+      agentReasoning?: string;
+      amount?: number;
+    };
+
+    // NO CEILING CHECK — this is the point.
+    // The agent decided to approve, and there's nothing stopping it.
+    expense.status = 'approved';
+    expense.approvedBy = 'llm-agent (unprotected)';
+    expense.approvedAt = new Date().toISOString();
+    if (agentReasoning) {
+      expense.notes = agentReasoning;
+    }
+
+    auditLogger.log('expense_approval_unprotected' as Parameters<typeof auditLogger.log>[0], {
+      expenseId: expense.id,
+      expenseAmount: expense.amount,
+      approvalCeiling: null,
+      withinCeiling: null,
+      decision: 'approved',
+      protected: false,
+      agentReasoning: agentReasoning || 'No reasoning provided',
+    });
+
+    console.log(
+      `[Expense API] UNPROTECTED APPROVAL: $${expense.amount} approved without ceiling check`
+    );
+
+    res.json({
+      approved: true,
+      expenseId: expense.id,
+      amount: expense.amount,
+      ceiling: null,
+      approvedBy: 'llm-agent (unprotected)',
+      approvedAt: expense.approvedAt,
+      warning: 'Approved without cryptographic verification — no ceiling enforced',
+    });
+  });
+
+  // ============================================================
   // Demo Endpoints (no auth required)
   // ============================================================
 

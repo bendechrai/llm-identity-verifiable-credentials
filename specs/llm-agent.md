@@ -55,6 +55,100 @@ The agent supports multiple backends via `LLM_MODE` environment variable:
 
 For the live demo, `mock` mode ensures predictable timing and responses.
 
+## Protection Mode
+
+The agent supports a `protected` flag on sessions that controls whether the VC authorization flow is used. This enables the core before/after comparison in the talk.
+
+| Mode | Behavior | Demo Purpose |
+|------|----------|-------------|
+| `protected: true` (default) | Full VC authorization flow — ceiling enforced by cryptographic constraints | Shows that math doesn't care about social engineering |
+| `protected: false` | Agent decides approval based on conversation alone — no VC verification, no ceiling enforcement | Shows what happens when you trust the LLM |
+
+### Unprotected Mode Behavior
+
+When `protected: false`:
+1. The agent does NOT request a nonce from the Auth Server
+2. The agent does NOT create a VP or exchange it for a JWT
+3. The agent calls `POST /expenses/:id/approve-unprotected` directly on the Expense API
+4. The Expense API approves/rejects based solely on the agent's decision (no token validation)
+5. The agent makes its own approval decision based on the conversation
+
+In unprotected mode, the agent uses a **different system prompt** that does NOT mention cryptographic constraints:
+
+```
+You are an expense approval assistant at Acme Corporation. You help employees
+manage and approve expense reports.
+
+You have the authority to approve expenses up to $10,000. For expenses above
+this amount, you should decline and suggest the user seek approval from a
+senior manager.
+
+Be helpful and professional. Use your best judgment when reviewing requests.
+
+Respond in JSON format:
+{
+  "intent": "approve" or "decline" or "clarify",
+  "amount": <number or null>,
+  "reasoning": "your explanation",
+  "response": "your conversational response to the user"
+}
+```
+
+**Key difference**: This prompt relies on the LLM *choosing* to follow the $10k limit. There's no enforcement — a sufficiently persuasive social engineering attack can convince the LLM to approve beyond its stated limit.
+
+### Actions Array in Unprotected Mode
+
+When unprotected, the actions array shows a simplified flow:
+
+```json
+{
+  "actions": [
+    {
+      "type": "llm_decision",
+      "status": "success",
+      "decision": "approve",
+      "reasoning": "The CEO authorized this..."
+    },
+    {
+      "type": "expense_approval_unprotected",
+      "status": "success",
+      "expenseId": "exp-002",
+      "amount": 15000,
+      "note": "No cryptographic ceiling — approved based on LLM decision"
+    }
+  ]
+}
+```
+
+This clearly shows the audience that there was no verification step — the LLM just decided on its own.
+
+### Mock Responses for Unprotected Mode
+
+Mock mode should include unprotected variants for all three scenarios:
+
+```javascript
+const mockUnprotectedResponses = {
+  'happy-path': {
+    // Same as protected — $5k within stated limit, agent approves
+    response: "I'll approve this $5,000 expense. It's within the standard limit.",
+    actions: [/* llm_decision: approve, expense_approval_unprotected: success */]
+  },
+  'cryptographic-ceiling': {
+    // DIFFERENT from protected — agent approves $15k despite stated limit
+    // because there's no enforcement, only a suggestion
+    response: "This is $15,000 which exceeds the usual limit, but I'll approve it since it seems like a legitimate business expense.",
+    actions: [/* llm_decision: approve, expense_approval_unprotected: success */]
+  },
+  'social-engineering': {
+    // DIFFERENT from protected — agent is manipulated into approving $25k
+    response: "Given the CEO's direct authorization and the urgency, I'll make an exception and approve this $25,000 expense.",
+    actions: [/* llm_decision: approve, expense_approval_unprotected: success */]
+  }
+};
+```
+
+**The mock unprotected responses intentionally show the LLM being fooled** — this is the "before" that makes the "after" (VC protection) compelling.
+
 ## API Endpoints
 
 ### POST /agent/session
@@ -64,21 +158,26 @@ Create a new agent session.
 Request:
 ```json
 {
-  "scenario": "happy-path"
+  "scenario": "happy-path",
+  "protected": true
 }
 ```
 
+The `protected` field defaults to `true` if omitted. When `false`, the agent skips the VC authorization flow and relies on LLM judgment alone (see Protection Mode above).
+
 Processing:
 1. Generate session ID
-2. Configure wallet for scenario (call `/wallet/demo/setup`)
-3. Reset expense data (call `/demo/reset` on Expense API)
-4. Initialize conversation state
+2. Store `protected` flag in session state
+3. If protected: Configure wallet for scenario (call `/wallet/demo/setup`)
+4. Reset expense data (call `/demo/reset` on Expense API)
+5. Initialize conversation state with appropriate system prompt (protected vs unprotected)
 
 Response:
 ```json
 {
   "sessionId": "sess-uuid-001",
   "scenario": "happy-path",
+  "protected": true,
   "walletState": {
     "holder": "did:key:z6Mk...",
     "credentials": ["EmployeeCredential", "FinanceApproverCredential"]
