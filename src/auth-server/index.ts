@@ -344,6 +344,23 @@ async function main() {
           notExpired,
         });
 
+        // Check credential signature verification result
+        if (!verified) {
+          auditLogger.log('authorization_decision', {
+            challenge,
+            holderDid: presentation.holder,
+            decision: 'denied',
+            reason: 'Credential signature verification failed',
+            credentialType: cred.type.filter(t => t !== 'VerifiableCredential').join(', '),
+          });
+
+          res.status(401).json({
+            error: 'invalid_grant',
+            error_description: 'Credential signature verification failed',
+          });
+          return;
+        }
+
         if (!isTrusted) {
           auditLogger.log('authorization_decision', {
             challenge,

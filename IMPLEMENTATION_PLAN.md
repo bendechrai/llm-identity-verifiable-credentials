@@ -29,8 +29,9 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | Phase 13 | Spec Compliance Fixes | COMPLETE | 100% |
 | Phase 14 | Spec Compliance & Feature Completeness | COMPLETE | 100% |
 | Phase 15 | Security & Audit Compliance | COMPLETE | 100% |
+| Phase 16 | Security & Spec Compliance Audit | COMPLETE | 100% |
 
-**Overall Progress: 100%** (all phases complete)
+**Overall Progress: 100%** (all 16 phases complete)
 
 ---
 
@@ -58,7 +59,7 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 
 ## Project Status: COMPLETE
 
-All 14 phases implemented. Core services, unprotected mode, promptfoo evaluation, demo UI enhancements, and spec compliance & feature completeness are complete.
+All 16 phases implemented. Core services, unprotected mode, promptfoo evaluation, demo UI enhancements, spec compliance & feature completeness, security & audit compliance, and security & spec compliance audit are complete.
 
 **Test Coverage:** 167 tests passing across 10 test files, including:
 - Unit tests for keys, credentials, and JWT utilities
@@ -94,6 +95,12 @@ When parsing expense amounts from user messages using string matching (e.g., che
 **Real LLM Backend Integration:**
 The Anthropic, OpenAI, and Ollama APIs can be called directly via `fetch()` without SDK dependencies. All three return text that can contain JSON — extract with regex to handle markdown code blocks wrapping the JSON. The key environment variables are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OLLAMA_URL`, and model overrides via `ANTHROPIC_MODEL`, `OPENAI_MODEL`, `OLLAMA_MODEL`.
 
+**Credential Signature Verification Must Be Enforced, Not Just Collected:**
+The auth server was checking `vpResult.credentialResults[i]?.verified` but never rejecting credentials where `verified === false`. A malicious actor could present a credential with an invalid signature, and as long as the issuer was trusted and the credential wasn't expired, it would be accepted. Fixed by adding an explicit check that rejects credentials with `verified === false` before proceeding with token issuance.
+
+**Scope Regex Anchoring Is a Security Boundary:**
+Without `^` and `$` anchors on the scope regex, a malformed or tampered scope string could be partially matched and accepted. The Expense API's `parseApprovalLimit()` used `/expense:approve:max:(\d+)/` which could match malformed scopes like `expense:approve:max:10000:extra`. Fixed by splitting on spaces and using anchored regex `/^expense:approve:max:(\d+)$/` per spec pseudocode.
+
 **Recent Code Fixes:**
 - Fixed `generateEd25519KeyPair()` to properly set `id` and `controller` for VC signing
 - Fixed `document-loader.ts` import syntax for `credentials-context` and `data-integrity-context` modules
@@ -112,6 +119,14 @@ The Anthropic, OpenAI, and Ollama APIs can be called directly via `fetch()` with
 - Auth Server: Nonce encoding changed from `hex` to `base64url` per spec for proper URL-safe encoding
 - VC Wallet: Updated `/wallet/demo/setup` to consume new issuer response format with named credential properties
 - Fixed mock intent parser substring matching: "$15,000" was matching "5,000" check due to substring inclusion. Fixed by checking larger amounts first (exp-003/exp-002 before exp-001) in both protected and unprotected mock parsers
+- Auth Server: Credential signature verification was checked but never enforced — added explicit rejection of credentials with `verified === false`
+- Expense API: Scope regex `parseApprovalLimit()` lacked anchors — fixed with `^`/`$` anchors and space-splitting per spec pseudocode
+- Expense API: Error message for ceiling violations updated to spec-compliant format with proper currency formatting (`$15,000` instead of `$15000`)
+- LLM Agent: Added missing "When declining due to ceiling" section to PROTECTED_SYSTEM_PROMPT per spec
+- VC Wallet: Removed extra `requested` field from error response for missing credentials; updated message to spec-compliant format
+- Demo UI: Added "[Clear]" button to audit log panel header per spec layout diagram
+- Demo UI: Added step key data display in auth flow panel (challenge, domain, scope, ceiling)
+- Demo UI: Added audit log auto-scroll (scrolls to top for newest entries)
 
 ---
 
@@ -537,5 +552,42 @@ This phase addressed security gaps and audit log spec compliance issues found th
 - [x] All 167 tests passing (no regressions)
 - [x] Typecheck clean
 - [x] Lint: 0 errors (23 non-null-assertion warnings, 22 pre-existing + 1 from new `req.token!.claims`)
+
+---
+
+## PHASE 16: Security & Spec Compliance Audit (COMPLETE)
+
+**STATUS: COMPLETE**
+**Progress: 8/8 tasks (100%)**
+
+A thorough audit of all services against their specification files identified security vulnerabilities, spec compliance gaps, and UI polish issues.
+
+### 16.1 Security Fixes (Critical)
+- [x] **16.1.1** Auth Server: Credential signature verification was checked but never enforced — `verified` result from `credentialResults` was collected but not used to reject invalid credentials. Added explicit check that rejects credentials with `verified === false` before proceeding with token issuance.
+- [x] **16.1.2** Expense API: Scope regex `parseApprovalLimit()` lacked anchors — `/expense:approve:max:(\d+)/` could match malformed scopes like `expense:approve:max:10000:extra`. Fixed by splitting on spaces and using anchored regex `/^expense:approve:max:(\d+)$/` per spec pseudocode.
+
+### 16.2 Spec Compliance Fixes
+- [x] **16.2.1** Expense API: Error message for ceiling violations updated from `"Amount $15000 exceeds your approval limit of $10000"` to spec-compliant `"Expense amount ($15,000) exceeds your approval limit ($10,000)"` with proper currency formatting.
+- [x] **16.2.2** LLM Agent: Added missing "When declining due to ceiling" section to PROTECTED_SYSTEM_PROMPT per spec — includes guidance on empathetic tone, stating limit/amount, explaining credential source, and suggesting alternatives.
+- [x] **16.2.3** VC Wallet: Error response for missing credentials updated — removed extra `requested` field not in spec, changed message from generic "No matching credentials found" to spec-compliant `"No credentials found matching types: X, Y"`.
+
+### 16.3 Demo UI Polish
+- [x] **16.3.1** Added "[Clear]" button to audit log panel header per spec layout diagram.
+- [x] **16.3.2** Added step key data display in auth flow panel — shows challenge, domain, scope, and ceiling values for each authorization step.
+- [x] **16.3.3** Added audit log auto-scroll — scrolls to top (newest entries first) after each update.
+
+### 16.4 Test Updates
+- [x] Updated expense.test.ts error message format assertions to match new spec-compliant format
+- [x] Updated agent.test.ts mock AgentAction error messages to match new format
+- [x] Updated integration.test.ts comment references to match new format
+
+### 16.5 Acceptance
+- [x] All 167 tests passing (no regressions)
+- [x] Typecheck clean
+- [x] Lint: 0 errors (23 pre-existing non-null-assertion warnings)
+
+### Key Security Learnings
+- **Credential signature verification must be enforced, not just collected**: The auth server was checking `vpResult.credentialResults[i]?.verified` but never rejecting credentials where `verified === false`. A malicious actor could present a credential with an invalid signature, and as long as the issuer was trusted and the credential wasn't expired, it would be accepted.
+- **Scope regex anchoring is a security boundary**: Without `^` and `$` anchors on the scope regex, a malformed or tampered scope string could be partially matched and accepted.
 
 ---

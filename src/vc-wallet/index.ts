@@ -217,10 +217,10 @@ async function main() {
       }
 
       if (credentials.length === 0) {
+        const requestedList = credentialTypes ? credentialTypes.join(', ') : 'any';
         res.status(400).json({
           error: 'missing_credentials',
-          message: 'No matching credentials found',
-          requested: credentialTypes,
+          message: `No credentials found matching types: ${requestedList}`,
           available: Array.from(availableTypes),
         });
         return;

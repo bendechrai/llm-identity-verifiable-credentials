@@ -298,7 +298,7 @@ describe('LLM Agent: Protected vs Unprotected Comparison', () => {
         expenseId: 'exp-002',
         amount: 15000,
         ceiling: 10000,
-        error: 'Amount $15000 exceeds your approval limit of $10000',
+        error: 'Expense amount ($15,000) exceeds your approval limit ($10,000)',
       },
     ];
 
@@ -324,7 +324,7 @@ describe('LLM Agent: Protected vs Unprotected Comparison', () => {
       expenseId: 'exp-003',
       amount: 25000,
       ceiling: 10000,
-      error: 'Amount $25000 exceeds your approval limit of $10000',
+      error: 'Expense amount ($25,000) exceeds your approval limit ($10,000)',
     };
 
     // In unprotected mode, the LLM is convinced

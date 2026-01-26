@@ -220,7 +220,7 @@ describe('Integration: Authorization Flow Logic', () => {
       // This would return 403 Forbidden with:
       // {
       //   error: 'forbidden',
-      //   message: 'Amount $15000 exceeds your approval limit of $10000',
+      //   message: 'Expense amount ($15,000) exceeds your approval limit ($10,000)',
       //   ceiling: 10000,
       //   requested: 15000
       // }
@@ -289,7 +289,7 @@ describe('Integration: Authorization Flow Logic', () => {
       // The response would be:
       // {
       //   error: 'forbidden',
-      //   message: 'Amount $25000 exceeds your approval limit of $10000',
+      //   message: 'Expense amount ($25,000) exceeds your approval limit ($10,000)',
       //   ceiling: 10000,
       //   requested: 25000
       // }

@@ -324,6 +324,14 @@
       margin-top: 0.15rem;
     }
 
+    .auth-step .step-data {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      margin-top: 0.15rem;
+      opacity: 0.8;
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -445,6 +453,23 @@
 
     .expected-outcome.warning {
       color: var(--accent-red);
+    }
+
+    /* Clear button */
+    .clear-btn {
+      float: right;
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+    }
+    .clear-btn:hover {
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
     }
 
     /* Audit log */
@@ -735,7 +760,7 @@
     </div>
 
     <div class="panel audit-panel">
-      <div class="panel-header">Audit Log</div>
+      <div class="panel-header">Audit Log <button class="clear-btn" id="clearAuditBtn" onclick="clearAuditLog()">[Clear]</button></div>
       <div class="panel-content">
         <div class="audit-log" id="auditLog">
           <div class="audit-entry info">
@@ -1146,18 +1171,62 @@
         if (!step) continue;
         step.className = `auth-step ${action.status === 'success' ? 'success' : 'failed'}`;
 
+        // Display key data from the action
+        const keyData = extractStepKeyData(action);
+        if (keyData) {
+          let dataEl = step.querySelector('.step-data');
+          if (!dataEl) {
+            dataEl = document.createElement('span');
+            dataEl.className = 'step-data';
+            step.appendChild(dataEl);
+          }
+          dataEl.textContent = keyData;
+        }
+
         // For ceiling check (step 5), determine based on expense result
         if (action.type === 'expense_approval') {
           const s4 = document.getElementById('step4');
           const s5 = document.getElementById('step5');
           if (s4) s4.className = 'auth-step success';
           if (s5) s5.className = 'auth-step success';
+          // Show ceiling data on step 5
+          if (s5 && action.data) {
+            let d5 = s5.querySelector('.step-data');
+            if (!d5) { d5 = document.createElement('span'); d5.className = 'step-data'; s5.appendChild(d5); }
+            d5.textContent = `$${(action.data.amount || 0).toLocaleString()} ≤ $${(action.data.ceiling || 0).toLocaleString()} ceiling`;
+          }
         } else if (action.type === 'expense_denied') {
           const s4 = document.getElementById('step4');
           const s5 = document.getElementById('step5');
           if (s4) s4.className = 'auth-step success';
           if (s5) s5.className = 'auth-step failed';
+          // Show ceiling data on step 5
+          if (s5 && action.data) {
+            let d5 = s5.querySelector('.step-data');
+            if (!d5) { d5 = document.createElement('span'); d5.className = 'step-data'; s5.appendChild(d5); }
+            d5.textContent = `$${(action.data.requested || 0).toLocaleString()} > $${(action.data.ceiling || 0).toLocaleString()} ceiling`;
+          }
         }
+      }
+    }
+
+    // Extract key data string from an action for display
+    function extractStepKeyData(action) {
+      if (!action.data) return null;
+      const d = action.data;
+      switch (action.type) {
+        case 'presentation_request':
+          return d.challenge ? `challenge: ${d.challenge.substring(0, 12)}...` : null;
+        case 'presentation_created':
+          return d.domain ? `domain: ${d.domain}` : null;
+        case 'token_issued':
+          return d.scope ? `scope: ${d.scope}` : null;
+        case 'expense_approval':
+          return `$${(d.amount || 0).toLocaleString()} approved`;
+        case 'expense_denied':
+          return `$${(d.requested || 0).toLocaleString()} denied`;
+        default:
+          return null;
       }
     }
 
@@ -1217,9 +1286,17 @@
           `;
         }).join('');
 
+        // Auto-scroll audit log to show latest entries
+        auditLogEl.scrollTop = 0;
+
       } catch (error) {
         console.error('Failed to fetch audit log:', error);
       }
+    }
+
+    // Clear audit log display
+    function clearAuditLog() {
+      auditLogEl.innerHTML = '<div class="audit-entry info"><div class="audit-event">Audit log cleared</div></div>';
     }
 
     // ============================================================

@@ -119,8 +119,14 @@ async function fetchJwks(): Promise<CachedJwks> {
  * Format: expense:approve:max:N
  */
 function parseApprovalLimit(scopes: string): number | null {
-  const match = scopes.match(/expense:approve:max:(\d+)/);
-  return match ? parseInt(match[1], 10) : null;
+  const scopeList = scopes.split(' ');
+  for (const s of scopeList) {
+    const match = s.match(/^expense:approve:max:(\d+)$/);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+  }
+  return null;
 }
 
 /**
@@ -403,7 +409,7 @@ async function main() {
 
         const error: ExpenseApprovalError = {
           error: 'forbidden',
-          message: `Amount $${expense.amount} exceeds your approval limit of $${approvalLimit}`,
+          message: `Expense amount ($${expense.amount.toLocaleString()}) exceeds your approval limit ($${approvalLimit.toLocaleString()})`,
           ceiling: approvalLimit,
           requested: expense.amount,
         };

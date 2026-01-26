@@ -432,9 +432,9 @@ describe('Expense API: Ceiling Enforcement Error Messages', () => {
     const expense = DEMO_EXPENSES[1]; // $15,000
     const approvalLimit = 10000;
 
-    const errorMessage = `Amount $${expense.amount} exceeds your approval limit of $${approvalLimit}`;
+    const errorMessage = `Expense amount ($${expense.amount.toLocaleString()}) exceeds your approval limit ($${approvalLimit.toLocaleString()})`;
 
-    expect(errorMessage).toBe('Amount $15000 exceeds your approval limit of $10000');
+    expect(errorMessage).toBe('Expense amount ($15,000) exceeds your approval limit ($10,000)');
   });
 
   it('should include ceiling and requested amounts in error response', () => {
@@ -443,7 +443,7 @@ describe('Expense API: Ceiling Enforcement Error Messages', () => {
 
     const errorResponse = {
       error: 'forbidden',
-      message: `Amount $${expense.amount} exceeds your approval limit of $${approvalLimit}`,
+      message: `Expense amount ($${expense.amount.toLocaleString()}) exceeds your approval limit ($${approvalLimit.toLocaleString()})`,
       ceiling: approvalLimit,
       requested: expense.amount,
     };
