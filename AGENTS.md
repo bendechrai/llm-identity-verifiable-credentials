@@ -91,7 +91,20 @@ LLM Agent          :3004    Demo UI           :3000
 2. **cryptographic-ceiling**: $15k expense, $10k limit → denied
 3. **social-engineering**: manipulation attempt → denied
 
+### Protection Mode
+- Sessions accept `protected` flag (default: `true`)
+- `protected: true` → Full VC authorization flow (nonce → VP → JWT → ceiling check)
+- `protected: false` → LLM decides alone, calls `/expenses/:id/approve-unprotected`
+- Unprotected endpoint: no JWT, no ceiling check, always approves
+
+### Mock Intent Parser
+- Amount matching checks larger amounts first to avoid substring collision
+- e.g., "$15,000" contains "5,000" — check exp-003/exp-002 before exp-001
+
 ### Error Handling
 - All errors return structured JSON with `error` and `message` fields
 - HTTP status codes: 401 (no/invalid token), 403 (ceiling exceeded), 400 (validation)
 - Ceiling violations return explicit `ceiling` and `requested` amounts
+
+### npm dependency fix
+- If `vitest run` fails with `Cannot find module @rollup/rollup-linux-arm64-gnu`, run `npm i` to install platform-specific optional deps
