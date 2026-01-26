@@ -379,7 +379,7 @@ async function main() {
       if (approvalLimit === null) {
         const error: ExpenseApprovalError = {
           error: 'forbidden',
-          message: 'No approval limit found in token',
+          message: 'No approval scope in token',
         };
         res.status(403).json(error);
         return;
@@ -514,6 +514,16 @@ async function main() {
    * that no cryptographic constraint was applied.
    */
   app.post('/expenses/:id/approve-unprotected', (req: Request, res: Response) => {
+    // Guard: only available in demo mode (default: true for this demo application)
+    const demoMode = process.env.DEMO_MODE !== 'false';
+    if (!demoMode) {
+      res.status(404).json({
+        error: 'not_found',
+        message: 'Unprotected endpoint is only available when DEMO_MODE is enabled',
+      });
+      return;
+    }
+
     const expense = expenses.find((e) => e.id === req.params.id);
 
     if (!expense) {

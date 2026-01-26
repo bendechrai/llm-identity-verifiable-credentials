@@ -46,7 +46,7 @@ const EmployeeCredentialRequestSchema = z.object({
 
 const FinanceApproverCredentialRequestSchema = z.object({
   subjectDid: z.string().startsWith('did:'),
-  approvalLimit: z.number().positive(),
+  approvalLimit: z.number().int().positive(),
   department: z.string().min(1),
 });
 

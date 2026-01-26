@@ -94,7 +94,15 @@ async function main() {
 
       // Verify holder binding (credentialSubject.id must match holder DID)
       const subjectId = (credential.credentialSubject as { id?: string }).id;
-      if (subjectId && subjectId !== holderDid) {
+      if (!subjectId) {
+        res.status(400).json({
+          error: 'holder_mismatch',
+          message: 'Credential must have credentialSubject.id matching wallet holder DID',
+          expected: holderDid,
+        });
+        return;
+      }
+      if (subjectId !== holderDid) {
         res.status(400).json({
           error: 'holder_mismatch',
           message: 'Credential subject ID does not match wallet holder DID',
@@ -221,7 +229,7 @@ async function main() {
         res.status(400).json({
           error: 'missing_credentials',
           message: `No credentials found matching types: ${requestedList}`,
-          available: Array.from(availableTypes),
+          available: Array.from(availableTypes).filter(t => t !== 'VerifiableCredential'),
         });
         return;
       }

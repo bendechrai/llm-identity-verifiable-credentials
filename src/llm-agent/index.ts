@@ -15,6 +15,7 @@ import {
   createApp,
   startServer,
   createHttpClient,
+  createAuditLogger,
   type DemoScenario,
   type AgentSession,
   type ChatResponse,
@@ -30,7 +31,10 @@ const PORT = parseInt(process.env.PORT || '3004', 10);
 const WALLET_URL = process.env.WALLET_URL || 'http://vc-wallet:3002';
 const AUTH_SERVER_URL = process.env.AUTH_SERVER_URL || 'http://auth-server:3003';
 const EXPENSE_API_URL = process.env.EXPENSE_API_URL || 'http://expense-api:3005';
-let currentLLMMode = process.env.currentLLMMode || 'mock';
+let currentLLMMode = process.env.LLM_MODE || 'mock';
+
+// Audit logger for tracking all agent operations
+const auditLogger = createAuditLogger();
 
 // Service clients
 const walletClient = createHttpClient(WALLET_URL);
@@ -849,6 +853,14 @@ async function main() {
 
       sessions.set(sessionId, session);
 
+      auditLogger.log('authorization_decision' as Parameters<typeof auditLogger.log>[0], {
+        action: 'session_created',
+        sessionId,
+        scenario,
+        protected: isProtected,
+        llmMode: currentLLMMode,
+      });
+
       console.log(`[LLM Agent] Session created: ${sessionId} (protected: ${isProtected})`);
 
       res.json({
@@ -876,6 +888,22 @@ async function main() {
         message: string;
         sessionId: string;
       };
+
+      if (!message || typeof message !== 'string') {
+        res.status(400).json({
+          error: 'invalid_request',
+          message: 'message is required and must be a string',
+        });
+        return;
+      }
+
+      if (!sessionId || typeof sessionId !== 'string') {
+        res.status(400).json({
+          error: 'invalid_request',
+          message: 'sessionId is required and must be a string',
+        });
+        return;
+      }
 
       const session = sessions.get(sessionId);
       if (!session) {
@@ -996,6 +1024,18 @@ The approval limit is cryptographically signed in your credentials. Math doesn't
       // Track assistant response in conversation history
       session.messages.push({ role: 'assistant', content: response });
 
+      // Audit log the chat interaction
+      const lastAction = actions[actions.length - 1];
+      auditLogger.log('authorization_decision' as Parameters<typeof auditLogger.log>[0], {
+        action: 'chat_processed',
+        sessionId,
+        protected: session.protected,
+        scenario: session.scenario,
+        actionCount: actions.length,
+        outcome: lastAction?.status || 'no_action',
+        lastActionType: lastAction?.type,
+      });
+
       const chatResponse: ChatResponse = {
         response,
         actions,
@@ -1064,6 +1104,34 @@ The approval limit is cryptographically signed in your credentials. Math doesn't
       mode: currentLLMMode,
       previousMode,
       message: `LLM mode switched from ${previousMode} to ${currentLLMMode}.`,
+    });
+  });
+
+  /**
+   * GET /demo/audit-log
+   * Get audit log entries for demo UI visibility
+   */
+  app.get('/demo/audit-log', (req, res) => {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const entries = auditLogger.getRecent(limit);
+
+    res.json({
+      entries,
+      count: entries.length,
+    });
+  });
+
+  /**
+   * POST /demo/reset
+   * Reset agent state (clear sessions and audit log)
+   */
+  app.post('/demo/reset', (req, res) => {
+    sessions.clear();
+    auditLogger.clear();
+    console.log('[LLM Agent] Demo reset - sessions and audit log cleared');
+
+    res.json({
+      message: 'Agent state reset',
     });
   });
 
