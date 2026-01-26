@@ -14,7 +14,7 @@ services:
       - NODE_ENV=development
       - PORT=3001
     volumes:
-      - ./src/vc-issuer:/app/src
+      - ./src/vc-issuer:/app/src/vc-issuer
       - ./shared:/app/shared
       - issuer-keys:/app/keys
     networks:
@@ -40,7 +40,7 @@ services:
       - PORT=3002
       - ISSUER_URL=http://vc-issuer:3001
     volumes:
-      - ./src/vc-wallet:/app/src
+      - ./src/vc-wallet:/app/src/vc-wallet
       - ./shared:/app/shared
       - wallet-keys:/app/keys
     depends_on:
@@ -70,7 +70,7 @@ services:
       - ISSUER_URL=http://vc-issuer:3001
       - TOKEN_EXPIRY_SECONDS=60
     volumes:
-      - ./src/auth-server:/app/src
+      - ./src/auth-server:/app/src/auth-server
       - ./shared:/app/shared
       - auth-keys:/app/keys
     depends_on:
@@ -99,7 +99,7 @@ services:
       - PORT=3005
       - AUTH_SERVER_URL=http://auth-server:3003
     volumes:
-      - ./src/expense-api:/app/src
+      - ./src/expense-api:/app/src/expense-api
       - ./shared:/app/shared
     depends_on:
       auth-server:
@@ -133,7 +133,7 @@ services:
       - EXPENSE_API_URL=http://expense-api:3005
       - WALLET_URL=http://vc-wallet:3002
     volumes:
-      - ./src/llm-agent:/app/src
+      - ./src/llm-agent:/app/src/llm-agent
       - ./shared:/app/shared
     depends_on:
       auth-server:
@@ -168,7 +168,7 @@ services:
       - EXPENSE_API_URL=http://expense-api:3005
       - WALLET_URL=http://vc-wallet:3002
     volumes:
-      - ./src/demo-ui:/app/src
+      - ./src/demo-ui:/app/src/demo-ui
       - ./shared:/app/shared
     depends_on:
       llm-agent:
@@ -192,6 +192,7 @@ services:
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
     volumes:
       - .:/home/ralph/project
+      - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /home/ralph/project
     networks:
       - demo-network

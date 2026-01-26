@@ -25,7 +25,10 @@
       "WebFetch(domain:www.gleif.org)",
       "WebFetch(domain:w3c.github.io)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:validate-docker:*)"
     ]
   }
 }

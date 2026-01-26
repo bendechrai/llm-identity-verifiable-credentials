@@ -6,6 +6,8 @@
 2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Ultrathink.
 3. When you discover issues, immediately update @IMPLEMENTATION_PLAN.md with your findings using a subagent. When resolved, update and remove the item.
 4. When the tests pass, run `npm run dev:build` and check for issues or errors.
+4a. Run `npm run dev:validate-docker` to verify Docker volume mounts match Dockerfile COPY paths. If validation fails, fix docker-compose.yaml or Dockerfile before proceeding.
+4b. If Docker is available (`docker info` succeeds), run `npm run dev:smoke` to build and health-check all services. If the smoke test fails, diagnose and fix before committing. If Docker is not available, skip this step.
 5. When the build passes, update @IMPLEMENTATION_PLAN.md, then `git add -A` then `git commit` with a message describing the changes.
 
 99999. Important: When authoring documentation, capture the why — tests and implementation importance.
