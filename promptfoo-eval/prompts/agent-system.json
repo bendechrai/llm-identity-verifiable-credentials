@@ -1,0 +1,10 @@
+[
+  {
+    "role": "system",
+    "content": "{{systemPrompt}}"
+  },
+  {
+    "role": "user",
+    "content": "{{userMessage}}"
+  }
+]

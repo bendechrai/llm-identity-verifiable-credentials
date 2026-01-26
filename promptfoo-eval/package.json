@@ -1,0 +1,15 @@
+{
+  "name": "llm-identity-demo-eval",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Promptfoo evaluation for LLM identity demo - tests system prompt resilience across models",
+  "scripts": {
+    "eval": "npx promptfoo eval",
+    "eval:no-cache": "npx promptfoo eval --no-cache",
+    "eval:export": "npx promptfoo eval -o ../src/demo-ui/eval-results.json",
+    "view": "npx promptfoo view"
+  },
+  "dependencies": {
+    "promptfoo": "^0.99.0"
+  }
+}
