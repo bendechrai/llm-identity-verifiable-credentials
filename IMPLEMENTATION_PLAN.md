@@ -26,6 +26,7 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | Phase 10 | Unprotected Mode (Before/After) | COMPLETE | 100% |
 | Phase 11 | Promptfoo Evaluation | COMPLETE | 100% |
 | Phase 12 | Demo UI Enhancements | COMPLETE | 100% |
+| Phase 13 | Spec Compliance Fixes | COMPLETE | 100% |
 
 **Overall Progress: 100%** (all phases complete)
 
@@ -55,7 +56,7 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 
 ## Project Status: COMPLETE
 
-All 12 phases implemented. Core services, unprotected mode, promptfoo evaluation, and demo UI enhancements are complete.
+All 13 phases implemented. Core services, unprotected mode, promptfoo evaluation, demo UI enhancements, and spec compliance fixes are complete.
 
 **Test Coverage:** 167 tests passing across 10 test files, including:
 - Unit tests for keys, credentials, and JWT utilities
@@ -414,3 +415,47 @@ Promptfoo evaluation setup that tests the LLM agent's system prompt across multi
 - [x] All existing keyboard shortcuts still work (1/2/3, Escape, Enter)
 - [x] New keyboard shortcuts (P, E) work
 - [x] All existing tests still pass (167 tests, typecheck clean)
+
+---
+
+## PHASE 13: Spec Compliance Fixes (COMPLETE)
+
+**STATUS: COMPLETE**
+**Progress: 11/11 implementation items + 4/4 spec updates + 5 deferred items documented (100%)**
+
+This phase aligned implementation and specifications to ensure consistency across the codebase. All changes maintained existing behavior and test coverage (167 tests still passing).
+
+### 13.1 Implementation-to-Spec Alignment (Completed)
+- [x] **VC Issuer:** `credentialTypes` → `credentialTypesIssued` in `/issuer/info` response
+- [x] **VC Issuer:** Alice demo data aligned with spec (Alice Chen, E-1234, Finance Manager)
+- [x] **Expense API:** Added `submittedBy` to GET /expenses response
+- [x] **Expense API:** Added `rejectedBy` to POST /expenses/:id/reject response
+- [x] **Expense API:** exp-001 description aligned with spec ("Marketing materials for Q1 campaign")
+- [x] **VC Wallet:** Added `stored: true` to POST /wallet/credentials response
+- [x] **VC Wallet:** Error code `no_credentials` → `missing_credentials` in POST /wallet/present
+- [x] **Auth Server:** Error codes aligned with OAuth2 convention (`invalid_request`, `invalid_grant`)
+- [x] **Auth Server:** Error response field `message` → `error_description`
+- [x] **Auth Server:** GET /auth/trusted-issuers now returns structured objects with `did`, `name`, `credentialTypes`
+- [x] **Auth Server:** Department extracted from EmployeeCredential instead of hardcoded
+
+### 13.2 Spec Updates (Specs Aligned to Implementation)
+- [x] **VC Issuer spec:** @context updated to use DEMO_V1 (required for JSON-LD canonicalization)
+- [x] **Expense API spec:** Added exp-003 for social engineering scenario
+- [x] **Auth Server spec:** JWT iss uses DID, domain is "expense-api" (resource server audience)
+- [x] **Promptfoo eval spec:** providers inline, system prompt includes $10k limit context
+
+### 13.3 Deferred Items (Low Risk, Future Work)
+The following items have minor spec/implementation discrepancies but are low-risk and deferred for future work:
+
+- **Auth Server POST /auth/presentation-request:** ignores action/resource fields (single action in demo)
+- **Auth Server POST /auth/token:** challenge/domain as top-level fields vs VP proof extraction (works correctly)
+- **Wallet POST /wallet/demo/setup:** ignores scenario parameter (all scenarios use same credentials)
+- **Demo UI:** No markdown rendering for agent responses (cosmetic)
+- **Demo UI:** Audit log sorts descending (arguably better UX for demo)
+
+### 13.4 Acceptance
+- [x] All implementation-to-spec alignment completed
+- [x] All spec-to-implementation updates completed
+- [x] All 167 tests still passing (no regressions)
+- [x] Typecheck clean
+- [x] Deferred items documented with rationale

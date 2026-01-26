@@ -226,7 +226,7 @@ async function main() {
     res.json({
       did: issuerDid,
       name: ISSUER_NAME,
-      credentialTypes: ['EmployeeCredential', 'FinanceApproverCredential'],
+      credentialTypesIssued: ['EmployeeCredential', 'FinanceApproverCredential'],
     });
   });
 
@@ -249,9 +249,9 @@ async function main() {
       // Issue EmployeeCredential
       const employeeCredential = await createEmployeeCredential(
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 

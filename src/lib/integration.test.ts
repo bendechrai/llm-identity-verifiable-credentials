@@ -68,8 +68,8 @@ describe('Integration: Authorization Flow Logic', () => {
       validFrom: new Date().toISOString(),
       credentialSubject: {
         id: holderDid,
-        name: 'Alice Johnson',
-        employeeId: 'EMP-001',
+        name: 'Alice Chen',
+        employeeId: 'E-1234',
         jobTitle: 'Finance Manager',
         department: 'Finance',
       },

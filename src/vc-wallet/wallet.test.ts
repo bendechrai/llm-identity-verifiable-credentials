@@ -41,9 +41,9 @@ async function createTestEmployeeCredential(
     validFrom: new Date().toISOString(),
     credentialSubject: {
       id: holderDid,
-      name: 'Alice Johnson',
-      employeeId: 'EMP-001',
-      jobTitle: 'Senior Financial Analyst',
+      name: 'Alice Chen',
+      employeeId: 'E-1234',
+      jobTitle: 'Finance Manager',
       department: 'Finance',
     },
   };

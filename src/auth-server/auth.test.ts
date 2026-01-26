@@ -146,9 +146,9 @@ async function createTestCredential(
       validFrom: new Date().toISOString(),
       credentialSubject: {
         id: holderDid,
-        name: 'Alice Johnson',
-        employeeId: 'EMP-001',
-        jobTitle: 'Senior Financial Analyst',
+        name: 'Alice Chen',
+        employeeId: 'E-1234',
+        jobTitle: 'Finance Manager',
         department: 'Finance',
       },
     };
@@ -360,8 +360,8 @@ describe('Auth Server: Scope Derivation (Server-Side Security)', () => {
     expect(scopes).toContain('expense:view');
     expect(scopes).toContain('expense:submit');
     expect(scopes).toContain('expense:approve:max:10000');
-    expect(claims.employeeId).toBe('EMP-001');
-    expect(claims.name).toBe('Alice Johnson');
+    expect(claims.employeeId).toBe('E-1234');
+    expect(claims.name).toBe('Alice Chen');
     expect(claims.approvalLimit).toBe(10000);
   });
 

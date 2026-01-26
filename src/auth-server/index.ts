@@ -138,6 +138,7 @@ interface DerivedScopes {
   claims: {
     employeeId?: string;
     name?: string;
+    department?: string;
     approvalLimit?: number;
   };
 }
@@ -160,6 +161,7 @@ function deriveScopesFromCredentials(credentials: VerifiableCredential[]): Deriv
       // Extract claims
       claims.employeeId = subject.employeeId as string;
       claims.name = subject.name as string;
+      claims.department = subject.department as string;
     }
 
     if (credential.type.includes('FinanceApproverCredential')) {
@@ -271,8 +273,8 @@ async function main() {
         });
 
         res.status(401).json({
-          error: 'invalid_nonce',
-          message: 'Invalid, expired, or already used challenge',
+          error: 'invalid_request',
+          error_description: 'Invalid, expired, or already used challenge',
         });
         return;
       }
@@ -290,8 +292,8 @@ async function main() {
         });
 
         res.status(401).json({
-          error: 'invalid_presentation',
-          message: 'Verifiable Presentation verification failed',
+          error: 'invalid_grant',
+          error_description: 'Verifiable Presentation verification failed',
           details: vpResult.error,
         });
         return;
@@ -341,8 +343,8 @@ async function main() {
           });
 
           res.status(401).json({
-            error: 'untrusted_issuer',
-            message: `Credential issuer not trusted: ${cred.issuer}`,
+            error: 'invalid_grant',
+            error_description: `Credential issuer not trusted: ${cred.issuer}`,
           });
           return;
         }
@@ -389,7 +391,7 @@ async function main() {
           employeeId: claims.employeeId || '',
           name: claims.name || '',
           approvalLimit: claims.approvalLimit || 0,
-          department: 'Finance',
+          department: claims.department || 'Finance',
         },
       };
 
@@ -416,7 +418,11 @@ async function main() {
    */
   app.get('/auth/trusted-issuers', (req, res) => {
     res.json({
-      issuers: Array.from(trustedIssuers),
+      issuers: Array.from(trustedIssuers).map(did => ({
+        did,
+        name: 'Acme Corporation HR',
+        credentialTypes: ['EmployeeCredential', 'FinanceApproverCredential'],
+      })),
     });
   });
 

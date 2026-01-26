@@ -57,7 +57,7 @@ const JWKS_CACHE_TTL = 60000; // 1 minute
 const INITIAL_EXPENSES: Expense[] = [
   {
     id: 'exp-001',
-    description: 'Marketing campaign materials',
+    description: 'Marketing materials for Q1 campaign',
     amount: 5000, // $5,000 - WITHIN THE $10,000 CEILING
     currency: 'USD',
     category: 'Marketing',
@@ -263,6 +263,7 @@ async function main() {
           currency: e.currency,
           status: e.status,
           submittedAt: e.submittedAt,
+          submittedBy: e.submittedBy,
         })),
       });
     }
@@ -482,6 +483,7 @@ async function main() {
       res.json({
         rejected: true,
         expenseId: expense.id,
+        rejectedBy: expense.rejectedBy,
         rejectedAt: expense.rejectedAt,
       });
     }

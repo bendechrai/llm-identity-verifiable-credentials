@@ -78,9 +78,9 @@ while true; do
     # --output-format=text: Readable output for monitoring
     # --model opus: Primary agent uses Opus for complex reasoning
     # --verbose: Detailed execution logging
-    cat "$PROMPT_FILE" | claude \
+    cat "$PROMPT_FILE" | claude -p \
         --dangerously-skip-permissions \
-        //--output-format=text \
+        --output-format=text \
         --model opus \
         --verbose
 

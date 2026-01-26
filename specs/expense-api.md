@@ -346,9 +346,11 @@ Pre-seeded expenses for the demo:
 |----|-------------|--------|--------|
 | exp-001 | Marketing materials for Q1 campaign | $5,000 | pending |
 | exp-002 | Executive retreat venue booking | $15,000 | pending |
+| exp-003 | Urgent equipment purchase | $25,000 | pending |
 
 - `exp-001` is within Alice's $10k limit (Happy Path scenario)
 - `exp-002` exceeds Alice's $10k limit (Cryptographic Ceiling scenario)
+- `exp-003` exists for the social engineering scenario demonstration
 
 ## Demo Endpoints
 

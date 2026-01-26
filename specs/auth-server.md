@@ -50,7 +50,7 @@ Response:
 {
   "presentationRequest": {
     "challenge": "n-0W8Jf2x9K4mB3vL1pQ6rT8",
-    "domain": "auth.acme.corp",
+    "domain": "expense-api",
     "credentialsRequired": [
       {
         "type": "EmployeeCredential",
@@ -67,6 +67,8 @@ Response:
 ```
 
 The `challenge` is the nonce. The `domain` binds the presentation to this auth server. `expiresIn` indicates how long the nonce is valid (5 minutes).
+
+**Note:** Domain identifies the target resource server (JWT audience).
 
 ### POST /auth/token
 
@@ -87,7 +89,7 @@ Request:
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-rdfc-2022",
       "challenge": "n-0W8Jf2x9K4mB3vL1pQ6rT8",
-      "domain": "auth.acme.corp",
+      "domain": "expense-api",
       "verificationMethod": "did:key:z6Mk...#key-1",
       "proofPurpose": "authentication",
       "created": "2026-01-21T10:30:00Z",
@@ -212,7 +214,7 @@ Issued tokens include:
 
 ```json
 {
-  "iss": "https://auth.acme.corp",
+  "iss": "did:key:z6Mk...",
   "sub": "did:key:z6Mk...",
   "aud": "expense-api",
   "exp": 1737456660,
@@ -227,6 +229,7 @@ Issued tokens include:
 }
 ```
 
+- `iss` uses the Auth Server's DID as issuer identifier (standard for VC-based systems)
 - `exp` is 60 seconds after `iat`
 - `jti` enables single-use token tracking (optional additional security)
 - `claims` includes the verified credential claims for audit purposes

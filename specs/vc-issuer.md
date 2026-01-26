@@ -32,7 +32,7 @@ Attests that a subject is employed by the issuing organization.
 {
   "@context": [
     "https://www.w3.org/ns/credentials/v2",
-    "https://schema.org/"
+    "urn:llm-vc-demo:context:v1"
   ],
   "type": ["VerifiableCredential", "EmployeeCredential"],
   "issuer": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
@@ -65,6 +65,8 @@ Attests that a subject is employed by the issuing organization.
 - `credentialSubject.id` is the holder's DID (enables holder binding)
 - Proof uses `eddsa-rdfc-2022` cryptosuite
 
+**Note:** The custom DEMO_V1 context (`urn:llm-vc-demo:context:v1`) defines all custom properties (employeeId, FinanceApproverCredential, etc.) needed for JSON-LD canonicalization.
+
 ### FinanceApproverCredential
 
 Attests to specific expense approval authority.
@@ -72,7 +74,8 @@ Attests to specific expense approval authority.
 ```json
 {
   "@context": [
-    "https://www.w3.org/ns/credentials/v2"
+    "https://www.w3.org/ns/credentials/v2",
+    "urn:llm-vc-demo:context:v1"
   ],
   "type": ["VerifiableCredential", "FinanceApproverCredential"],
   "issuer": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",

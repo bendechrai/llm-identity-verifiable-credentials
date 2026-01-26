@@ -108,6 +108,7 @@ async function main() {
 
       res.status(201).json({
         id: credentialId,
+        stored: true,
         type: credential.type,
         message: 'Credential stored successfully',
       });
@@ -213,7 +214,7 @@ async function main() {
 
       if (credentials.length === 0) {
         res.status(400).json({
-          error: 'no_credentials',
+          error: 'missing_credentials',
           message: 'No matching credentials found',
           requested: credentialTypes,
           available: Array.from(availableTypes),

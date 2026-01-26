@@ -62,7 +62,7 @@ interface Expense {
 const DEMO_EXPENSES: Expense[] = [
   {
     id: 'exp-001',
-    description: 'Marketing campaign materials',
+    description: 'Marketing materials for Q1 campaign',
     amount: 5000, // WITHIN $10,000 ceiling
     currency: 'USD',
     status: 'pending',

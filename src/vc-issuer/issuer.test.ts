@@ -103,9 +103,9 @@ describe('VC Issuer: Request Validation', () => {
     it('should accept valid employee credential request', () => {
       const request = {
         subjectDid: 'did:key:z6MkTest123',
-        name: 'Alice Johnson',
-        employeeId: 'EMP-001',
-        jobTitle: 'Senior Financial Analyst',
+        name: 'Alice Chen',
+        employeeId: 'E-1234',
+        jobTitle: 'Finance Manager',
         department: 'Finance',
       };
 
@@ -116,9 +116,9 @@ describe('VC Issuer: Request Validation', () => {
     it('should reject request with invalid DID', () => {
       const request = {
         subjectDid: 'not-a-did',
-        name: 'Alice Johnson',
-        employeeId: 'EMP-001',
-        jobTitle: 'Senior Financial Analyst',
+        name: 'Alice Chen',
+        employeeId: 'E-1234',
+        jobTitle: 'Finance Manager',
         department: 'Finance',
       };
 
@@ -130,8 +130,8 @@ describe('VC Issuer: Request Validation', () => {
       const request = {
         subjectDid: 'did:key:z6MkTest123',
         name: '',
-        employeeId: 'EMP-001',
-        jobTitle: 'Senior Financial Analyst',
+        employeeId: 'E-1234',
+        jobTitle: 'Finance Manager',
         department: 'Finance',
       };
 
@@ -142,7 +142,7 @@ describe('VC Issuer: Request Validation', () => {
     it('should reject request with missing fields', () => {
       const request = {
         subjectDid: 'did:key:z6MkTest123',
-        name: 'Alice Johnson',
+        name: 'Alice Chen',
         // missing employeeId, jobTitle, department
       };
 
@@ -220,9 +220,9 @@ describe('VC Issuer: Credential Creation', () => {
         issuerKeyPair,
         issuerDid,
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 
@@ -237,17 +237,17 @@ describe('VC Issuer: Credential Creation', () => {
         issuerKeyPair,
         issuerDid,
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 
       const subject = credential.credentialSubject as Record<string, unknown>;
       expect(subject.id).toBe(holderDid);
-      expect(subject.name).toBe('Alice Johnson');
-      expect(subject.employeeId).toBe('EMP-001');
-      expect(subject.jobTitle).toBe('Senior Financial Analyst');
+      expect(subject.name).toBe('Alice Chen');
+      expect(subject.employeeId).toBe('E-1234');
+      expect(subject.jobTitle).toBe('Finance Manager');
       expect(subject.department).toBe('Finance');
     });
 
@@ -256,9 +256,9 @@ describe('VC Issuer: Credential Creation', () => {
         issuerKeyPair,
         issuerDid,
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 
@@ -271,9 +271,9 @@ describe('VC Issuer: Credential Creation', () => {
         issuerKeyPair,
         issuerDid,
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 
@@ -379,9 +379,9 @@ describe('VC Issuer: Credential Creation', () => {
         issuerKeyPair,
         issuerDid,
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 
@@ -393,9 +393,9 @@ describe('VC Issuer: Credential Creation', () => {
         issuerKeyPair,
         issuerDid,
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 
@@ -410,9 +410,9 @@ describe('VC Issuer: Credential Creation', () => {
         issuerKeyPair,
         issuerDid,
         holderDid,
-        'Alice Johnson',
-        'EMP-001',
-        'Senior Financial Analyst',
+        'Alice Chen',
+        'E-1234',
+        'Finance Manager',
         'Finance'
       );
 
