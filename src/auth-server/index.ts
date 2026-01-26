@@ -306,6 +306,7 @@ async function main() {
         issuer: string;
         trusted: boolean;
         verified: boolean;
+        notExpired: boolean;
       }> = [];
 
       for (let i = 0; i < credentials.length; i++) {
@@ -326,11 +327,21 @@ async function main() {
         const isTrusted = trustedIssuers.has(cred.issuer);
         const verified = vpResult.credentialResults[i]?.verified ?? false;
 
+        // Check credential expiration (validUntil per VC 2.0)
+        let notExpired = true;
+        if (cred.validUntil) {
+          const expirationTime = new Date(cred.validUntil).getTime();
+          if (Date.now() > expirationTime) {
+            notExpired = false;
+          }
+        }
+
         credentialResults.push({
           type: cred.type,
           issuer: cred.issuer,
           trusted: isTrusted,
           verified,
+          notExpired,
         });
 
         if (!isTrusted) {
@@ -345,6 +356,23 @@ async function main() {
           res.status(401).json({
             error: 'invalid_grant',
             error_description: `Credential issuer not trusted: ${cred.issuer}`,
+          });
+          return;
+        }
+
+        if (!notExpired) {
+          auditLogger.log('authorization_decision', {
+            challenge,
+            holderDid: presentation.holder,
+            decision: 'denied',
+            reason: 'Credential expired',
+            credentialType: cred.type.filter(t => t !== 'VerifiableCredential').join(', '),
+            validUntil: cred.validUntil,
+          });
+
+          res.status(401).json({
+            error: 'invalid_grant',
+            error_description: 'Credential has expired',
           });
           return;
         }
@@ -383,7 +411,7 @@ async function main() {
             issuer: cr.issuer,
             issuerTrusted: cr.trusted,
             signatureValid: cr.verified,
-            notExpired: true,
+            notExpired: cr.notExpired,
           };
           // Include claims for FinanceApproverCredential
           if (cred.type.includes('FinanceApproverCredential') && subject.approvalLimit !== undefined) {

@@ -28,6 +28,7 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | Phase 12 | Demo UI Enhancements | COMPLETE | 100% |
 | Phase 13 | Spec Compliance Fixes | COMPLETE | 100% |
 | Phase 14 | Spec Compliance & Feature Completeness | COMPLETE | 100% |
+| Phase 15 | Security & Audit Compliance | COMPLETE | 100% |
 
 **Overall Progress: 100%** (all phases complete)
 
@@ -105,6 +106,9 @@ The Anthropic, OpenAI, and Ollama APIs can be called directly via `fetch()` with
 - VC Issuer: Added `authentication` array to DID document at `/.well-known/did.json` (required by spec)
 - VC Wallet: Added credential verification in `/wallet/demo/setup` endpoint to verify signature and holder binding before storing (improved security model)
 - VC Issuer: `/demo/issue-alice-credentials` response format updated to match spec - now returns `{employeeCredential, financeApproverCredential, holderDid}` instead of `{credentials: [...], holder, message}` for clearer credential identification
+- Auth Server: Added credential expiration validation (`validUntil` check) per spec — previously hardcoded `notExpired: true` in audit log
+- Expense API: Added `tokenClaims` to `expense_approval` audit log entries per spec
+- Expense API: Changed ceiling violation audit reason from verbose string to spec constant `'exceeds_ceiling'`
 - Auth Server: Nonce encoding changed from `hex` to `base64url` per spec for proper URL-safe encoding
 - VC Wallet: Updated `/wallet/demo/setup` to consume new issuer response format with named credential properties
 - Fixed mock intent parser substring matching: "$15,000" was matching "5,000" check due to substring inclusion. Fixed by checking larger amounts first (exp-003/exp-002 before exp-001) in both protected and unprotected mock parsers
@@ -505,5 +509,33 @@ This phase addressed spec compliance gaps and missing features identified throug
 - **Conversation history**: The `messages` array in `AgentSession` enables multi-turn context for real LLM backends. Mock mode ignores history since responses are scripted per-message
 - **Runtime mode switching**: `POST /agent/mode` validates the mode and switches the in-memory `currentLLMMode` variable. Existing sessions continue with the new mode on their next message
 - **Auth server audit**: Both `authorization_decision` (spec format) and `token_issued` (existing format) are logged for the success path to maintain backwards compatibility with the demo UI's audit log display
+
+---
+
+## PHASE 15: Security & Audit Compliance (COMPLETE)
+
+**STATUS: COMPLETE**
+**Progress: 3/3 tasks (100%)**
+
+This phase addressed security gaps and audit log spec compliance issues found through a thorough audit comparing all spec files against the implementation.
+
+### 15.1 Auth Server: Credential Expiration Validation
+- [x] **15.1.1** Added `validUntil` check when processing credentials in `POST /auth/token`
+- [x] **15.1.2** Expired credentials now return 401 with `error: 'invalid_grant'` and `error_description: 'Credential has expired'`
+- [x] **15.1.3** `notExpired` field in audit log now reflects actual validation result instead of hardcoded `true`
+- [x] **15.1.4** Audit log entry for expired credential includes `credentialType` and `validUntil` for debugging
+
+**Why:** The spec at `specs/auth-server.md:109` explicitly requires "Check not expired" as a processing step. Without this validation, an expired credential could still be used to obtain a valid JWT — a security gap where the cryptographic ceiling could be bypassed by using a stale credential with outdated limits.
+
+### 15.2 Expense API: Audit Log Spec Compliance
+- [x] **15.2.1** Added `tokenClaims` field to `expense_approval` audit log entries per `specs/expense-api.md:260-263`
+- [x] **15.2.2** Changed ceiling violation `reason` from `'Amount exceeds approval limit'` to `'exceeds_ceiling'` per `specs/expense-api.md:280`
+
+**Why:** The audit log is critical for demo transparency. The `tokenClaims` field allows the audience to see which employee's credentials were used for the approval. The `exceeds_ceiling` constant makes the reason machine-parseable and matches the spec's intent for structured audit data.
+
+### 15.3 Acceptance
+- [x] All 167 tests passing (no regressions)
+- [x] Typecheck clean
+- [x] Lint: 0 errors (23 non-null-assertion warnings, 22 pre-existing + 1 from new `req.token!.claims`)
 
 ---

@@ -394,7 +394,7 @@ async function main() {
           approvalCeiling: approvalLimit,
           withinCeiling: false,
           decision: 'denied',
-          reason: 'Amount exceeds approval limit',
+          reason: 'exceeds_ceiling',
         });
 
         console.log(
@@ -424,6 +424,7 @@ async function main() {
         approvalCeiling: approvalLimit,
         withinCeiling: true,
         decision: 'approved',
+        tokenClaims: req.token!.claims || {},
       });
 
       console.log(
