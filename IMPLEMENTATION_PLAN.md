@@ -106,21 +106,6 @@ When parsing expense amounts from user messages using string matching (e.g., che
 
 ---
 
-## Completed Phases Summary (0-7)
-
-All core implementation phases are complete:
-
-- **Phase 0 (Prerequisites):** Package.json with VC 2.0 packages, tsconfig.json, directory structure, Dockerfiles updated for TypeScript
-- **Phase 1 (Shared Library):** Keys, document-loader, credentials, JWT, middleware, audit, http-client utilities
-- **Phase 2 (VC Issuer):** Issues EmployeeCredential and FinanceApproverCredential with DataIntegrityProof
-- **Phase 3 (VC Wallet):** Stores credentials, creates VPs with challenge/domain binding
-- **Phase 4 (Auth Server):** Nonce management, VP verification, JWT issuance with scope derivation
-- **Phase 5 (Expense API):** THE CRYPTOGRAPHIC CEILING enforcement (`if (amount > limit) -> 403`)
-- **Phase 6 (LLM Agent):** Mock LLM with scripted responses for all three demo scenarios
-- **Phase 7 (Demo UI):** Single-page HTML with chat, auth flow visualization, credentials panel, audit log
-
----
-
 ## PHASE 8: Integration Testing (COMPLETE)
 
 **STATUS: COMPLETE**
@@ -210,27 +195,6 @@ The core demo enhancement: add an "unprotected" mode where the LLM agent makes a
 
 ### Bug Fix
 - Fixed mock intent parser substring matching: `"$15,000"` was matching the `"5,000"` check because of substring inclusion (`"15,000".includes("5,000")` is true). Fixed by checking larger amounts first (exp-003/exp-002 before exp-001). This affects both protected and unprotected mock parsers.
-
----
-
-## Critical Path Summary
-
-These items are blocking and must work correctly for the demo to succeed:
-
-| Priority | Task | Why Critical |
-|----------|------|--------------|
-| 1 | Package dependencies (0.1) | Wrong VC libraries - nothing will work |
-| 2 | tsconfig.json (0.2) | TypeScript won't compile |
-| 3 | Directory structure (0.3) | Nowhere to put code |
-| 4 | Dockerfile fixes (0.4) | Services won't run in Docker |
-| 5 | Key management (1.2) | Can't sign/verify anything |
-| 6 | Document loader (1.3) | All JSON-LD operations fail |
-| 7 | Credential utilities (1.4) | Can't issue/verify VCs |
-| 8 | VP with challenge/domain (3.4.5) | Replay attacks possible |
-| 9 | Nonce single-use (4.2.2, 4.5.2) | Replay attacks possible |
-| 10 | Scope derivation (4.5.2) | Wrong permissions granted |
-| 11 | **Ceiling enforcement (5.5.4)** | **Demo's core point fails** |
-| 12 | Mock responses (6.2.3) | Demo scenarios don't work |
 
 ---
 
