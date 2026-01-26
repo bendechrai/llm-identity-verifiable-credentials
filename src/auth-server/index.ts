@@ -370,7 +370,34 @@ async function main() {
 
       const token = await signJwt(jwtPayload, authKeyPair, `${authDid}#${authKeyPair.publicKeyMultibase}`);
 
-      // Log success
+      // Log authorization decision (spec-compliant format)
+      auditLogger.log('authorization_decision', {
+        challenge,
+        holderDid: presentation.holder,
+        presentationVerified: true,
+        credentials: credentialResults.map((cr, i) => {
+          const cred = credentials[i];
+          const subject = cred.credentialSubject as Record<string, unknown>;
+          const result: Record<string, unknown> = {
+            type: cr.type.filter(t => t !== 'VerifiableCredential').join(', ') || cr.type.join(', '),
+            issuer: cr.issuer,
+            issuerTrusted: cr.trusted,
+            signatureValid: cr.verified,
+            notExpired: true,
+          };
+          // Include claims for FinanceApproverCredential
+          if (cred.type.includes('FinanceApproverCredential') && subject.approvalLimit !== undefined) {
+            result.claims = { approvalLimit: subject.approvalLimit };
+          }
+          return result;
+        }),
+        scopesGranted: scopes,
+        tokenId,
+        tokenExpiresAt: new Date((now + TOKEN_EXPIRY_SECONDS) * 1000).toISOString(),
+        decision: 'granted',
+      });
+
+      // Also log token_issued for backwards compatibility
       auditLogger.log('token_issued', {
         tokenId,
         challenge,

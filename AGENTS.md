@@ -85,6 +85,15 @@ LLM Agent          :3004    Demo UI           :3000
 - Set `LLM_MODE` env var: `mock`, `ollama`, `openai`, `anthropic`
 - Mock mode uses scripted responses for deterministic demos
 - Real modes require API keys in `.env`
+- Switch at runtime via `POST /agent/mode` with `{"mode": "mock|anthropic|openai|ollama"}`
+
+### Real LLM Backend Environment Variables
+- `ANTHROPIC_API_KEY` - Claude API key
+- `OPENAI_API_KEY` - OpenAI API key
+- `OLLAMA_URL` - Ollama server URL (default: `http://localhost:11434`)
+- `ANTHROPIC_MODEL` - Override Claude model (default: `claude-3-5-haiku-20241022`)
+- `OPENAI_MODEL` - Override OpenAI model (default: `gpt-4o-mini`)
+- `OLLAMA_MODEL` - Override Ollama model (default: `llama3.2`)
 
 ### Demo Scenarios (THREE)
 1. **happy-path**: $5k expense, $10k limit → approved

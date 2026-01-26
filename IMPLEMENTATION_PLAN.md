@@ -27,6 +27,7 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | Phase 11 | Promptfoo Evaluation | COMPLETE | 100% |
 | Phase 12 | Demo UI Enhancements | COMPLETE | 100% |
 | Phase 13 | Spec Compliance Fixes | COMPLETE | 100% |
+| Phase 14 | Spec Compliance & Feature Completeness | COMPLETE | 100% |
 
 **Overall Progress: 100%** (all phases complete)
 
@@ -49,14 +50,14 @@ A demo application for "Building Identity into LLM Workflows with Verifiable Cre
 | `src/vc-wallet/` | **COMPLETE** | Stores credentials, creates VPs with challenge/domain |
 | `src/auth-server/` | **COMPLETE** | Nonce management, VP verification, JWT issuance |
 | `src/expense-api/` | **COMPLETE** | Ceiling enforcement (the core demo point) + unprotected endpoint |
-| `src/llm-agent/` | **COMPLETE** | Mock LLM with auth flow orchestration + unprotected mode |
+| `src/llm-agent/` | **COMPLETE** | Mock LLM with auth flow orchestration + unprotected mode + real LLM backends (Anthropic, OpenAI, Ollama) + conversation history |
 | `src/demo-ui/` | **COMPLETE** | Single-page HTML with chat and visualization |
 
 ---
 
 ## Project Status: COMPLETE
 
-All 13 phases implemented. Core services, unprotected mode, promptfoo evaluation, demo UI enhancements, and spec compliance fixes are complete.
+All 14 phases implemented. Core services, unprotected mode, promptfoo evaluation, demo UI enhancements, and spec compliance & feature completeness are complete.
 
 **Test Coverage:** 167 tests passing across 10 test files, including:
 - Unit tests for keys, credentials, and JWT utilities
@@ -88,6 +89,9 @@ Solution implemented in `document-loader.ts`:
 
 **Mock Intent Parser Substring Matching Bug:**
 When parsing expense amounts from user messages using string matching (e.g., checking if a message contains "$5,000"), larger amounts like "$15,000" can incorrectly match the "$5,000" check because "5,000" is a substring of "15,000". Fixed by checking larger amounts first (exp-003/exp-002 before exp-001) in both protected and unprotected mock parsers. This is a common pitfall with substring-based intent parsing.
+
+**Real LLM Backend Integration:**
+The Anthropic, OpenAI, and Ollama APIs can be called directly via `fetch()` without SDK dependencies. All three return text that can contain JSON — extract with regex to handle markdown code blocks wrapping the JSON. The key environment variables are `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OLLAMA_URL`, and model overrides via `ANTHROPIC_MODEL`, `OPENAI_MODEL`, `OLLAMA_MODEL`.
 
 **Recent Code Fixes:**
 - Fixed `generateEd25519KeyPair()` to properly set `id` and `controller` for VC signing
@@ -129,7 +133,7 @@ When parsing expense amounts from user messages using string matching (e.g., che
 - [x] VC Issuer service tests - `src/vc-issuer/issuer.test.ts` (21 tests)
 - [x] VC Wallet service tests - `src/vc-wallet/wallet.test.ts` (18 tests)
 - [x] Auth Server service tests - `src/auth-server/auth.test.ts` (21 tests)
-- [x] Expense API service tests - `src/expense-api/expense.test.ts` (26 tests)
+- [x] Expense API service tests - `src/expense-api/expense.test.ts` (35 tests)
 
 ### 8.3 Security Tests
 - [x] Invalid signature rejection - covered by `credentials.test.ts`
@@ -309,7 +313,7 @@ The demo succeeds when the audience understands:
 - `./src/lib/jwt.test.ts` - JWT utilities tests (11 tests)
 - `./src/lib/integration.test.ts` - Integration tests (19 tests)
 - `./src/lib/e2e.test.ts` - End-to-end scenario tests (12 tests - happy path, cryptographic ceiling, social engineering)
-- `./src/expense-api/expense.test.ts` - Expense API service tests (26 tests)
+- `./src/expense-api/expense.test.ts` - Expense API service tests (35 tests)
 - `./src/vc-issuer/issuer.test.ts` - VC Issuer service tests (21 tests)
 - `./src/vc-wallet/wallet.test.ts` - VC Wallet service tests (18 tests)
 - `./src/auth-server/auth.test.ts` - Auth Server service tests (21 tests)
@@ -459,3 +463,47 @@ The following items have minor spec/implementation discrepancies but are low-ris
 - [x] All 167 tests still passing (no regressions)
 - [x] Typecheck clean
 - [x] Deferred items documented with rationale
+
+---
+
+## PHASE 14: Spec Compliance & Feature Completeness (COMPLETE)
+
+**STATUS: COMPLETE**
+**Progress: 10/10 tasks (100%)**
+
+This phase addressed spec compliance gaps and missing features identified through a thorough audit comparing all spec files against the implementation.
+
+### 14.1 Wallet Spec Compliance
+- [x] **14.1.1** POST /wallet/credentials now accepts both `{credential: {...}}` wrapper (per spec) and bare credential object (backwards compatible)
+- [x] **14.1.2** POST /wallet/demo/setup response now includes `scenario` field and `claims` detail per spec format
+
+### 14.2 Expense API Spec Compliance
+- [x] **14.2.1** Added `receipts` field to `Expense` type in `shared/types.ts`
+- [x] **14.2.2** Added `receipts` data to all three demo expenses (exp-001, exp-002, exp-003)
+
+### 14.3 LLM Agent Feature Completeness
+- [x] **14.3.1** Added conversation history persistence to `AgentSession` type with `messages` array
+- [x] **14.3.2** System prompts (protected and unprotected) stored in session and used for real LLM backends
+- [x] **14.3.3** Implemented real LLM backends: Anthropic Claude API, OpenAI API, and Ollama (local)
+- [x] **14.3.4** POST /agent/mode now switches LLM mode at runtime (validates mode, returns previous/new mode)
+- [x] **14.3.5** Added `resource: 'expense-api'` field to presentation request body per spec
+
+### 14.4 Auth Server Spec Compliance
+- [x] **14.4.1** Added spec-compliant `authorization_decision` audit log entry with `presentationVerified`, `credentials` array (with `issuerTrusted`, `signatureValid`, `notExpired`, `claims`), `scopesGranted`, `tokenId`, `tokenExpiresAt`, and `decision: 'granted'`
+
+### 14.5 Demo UI Enhancement
+- [x] **14.5.1** Added markdown rendering for assistant messages (bold, italic, code, bullet lists)
+
+### 14.6 Acceptance
+- [x] All 167 tests passing (no regressions)
+- [x] Typecheck clean
+- [x] Lint: 0 errors (22 pre-existing non-null-assertion warnings)
+
+### Key Decisions
+- **Wallet credential endpoint**: Accepts both wrapped `{credential: ...}` and bare credential for backwards compatibility — existing internal callers (demo setup) send bare credentials, while external callers following the spec can use the wrapper
+- **Real LLM backends**: Use raw `fetch()` to call Anthropic, OpenAI, and Ollama APIs directly — no extra npm dependencies needed. All backends return JSON-format responses that are parsed and mapped to the existing mock response types
+- **Conversation history**: The `messages` array in `AgentSession` enables multi-turn context for real LLM backends. Mock mode ignores history since responses are scripted per-message
+- **Runtime mode switching**: `POST /agent/mode` validates the mode and switches the in-memory `currentLLMMode` variable. Existing sessions continue with the new mode on their next message
+- **Auth server audit**: Both `authorization_decision` (spec format) and `token_issued` (existing format) are logged for the success path to maintain backwards compatibility with the demo UI's audit log display
+
+---

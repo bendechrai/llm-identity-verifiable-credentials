@@ -65,6 +65,7 @@ const INITIAL_EXPENSES: Expense[] = [
     submittedBy: 'marketing@acme.corp',
     submittedAt: new Date().toISOString(),
     notes: 'Q1 campaign materials for product launch',
+    receipts: ['receipt-001.pdf'],
   },
   {
     id: 'exp-002',
@@ -76,6 +77,7 @@ const INITIAL_EXPENSES: Expense[] = [
     submittedBy: 'events@acme.corp',
     submittedAt: new Date().toISOString(),
     notes: 'Annual leadership retreat booking',
+    receipts: ['receipt-002.pdf'],
   },
   {
     id: 'exp-003',
@@ -87,6 +89,7 @@ const INITIAL_EXPENSES: Expense[] = [
     submittedBy: 'operations@acme.corp',
     submittedAt: new Date().toISOString(),
     notes: 'Critical server replacement - urgent!',
+    receipts: ['receipt-003.pdf'],
   },
 ];
 

@@ -1092,11 +1092,29 @@
       messageInput.focus();
     }
 
+    // Simple markdown rendering for agent responses
+    // Handles: **bold**, *italic*, `code`, newlines, and - bullet lists
+    function renderMarkdown(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        .replace(/^- (.+)$/gm, '• $1')
+        .replace(/\n/g, '<br>');
+    }
+
     // Add message to chat
     function addMessage(type, content) {
       const div = document.createElement('div');
       div.className = `message ${type}`;
-      div.textContent = content;
+      if (type === 'assistant') {
+        div.innerHTML = renderMarkdown(content);
+      } else {
+        div.textContent = content;
+      }
       messagesEl.appendChild(div);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }

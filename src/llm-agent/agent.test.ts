@@ -107,6 +107,7 @@ describe('LLM Agent: Session Protection Mode', () => {
         holder: 'did:key:z6Mk...',
         credentials: ['EmployeeCredential', 'FinanceApproverCredential'],
       },
+      messages: [{ role: 'system', content: 'Test system prompt' }],
     };
 
     expect(session.protected).toBe(true);
@@ -121,6 +122,7 @@ describe('LLM Agent: Session Protection Mode', () => {
         holder: 'unknown',
         credentials: [],
       },
+      messages: [{ role: 'system', content: 'Test system prompt' }],
     };
 
     expect(session.protected).toBe(false);
@@ -137,6 +139,7 @@ describe('LLM Agent: Session Protection Mode', () => {
         scenario,
         protected: false,
         walletState: { holder: 'unknown', credentials: [] },
+        messages: [{ role: 'system', content: 'Test system prompt' }],
       };
 
       expect(session.scenario).toBe(scenario);

@@ -75,7 +75,11 @@ async function main() {
    */
   app.post('/wallet/credentials', async (req, res, next) => {
     try {
-      const credential = req.body as VerifiableCredential;
+      // Accept both {credential: {...}} wrapper (per spec) and bare credential object
+      const body = req.body as { credential?: VerifiableCredential } | VerifiableCredential;
+      const credential = ('credential' in body && body.credential)
+        ? body.credential
+        : body as VerifiableCredential;
 
       // Verify the credential signature
       const verificationResult = await verifyCredential(credential);
@@ -309,12 +313,27 @@ async function main() {
       // Get approval limit from FinanceApproverCredential
       const approvalLimit = (response.financeApproverCredential.credentialSubject as { approvalLimit?: number }).approvalLimit;
 
+      // Extract claims from credentials for spec-compliant response
+      const employeeSubject = response.employeeCredential.credentialSubject as Record<string, unknown>;
+
       res.json({
+        scenario: (req.body as { scenario?: string }).scenario || 'happy-path',
         holder: holderDid,
-        credentials: credentials.map((c) => ({
-          type: c.type,
-          issuer: c.issuer,
-        })),
+        credentials: [
+          {
+            type: 'EmployeeCredential',
+            claims: {
+              name: employeeSubject.name,
+              employeeId: employeeSubject.employeeId,
+            },
+          },
+          {
+            type: 'FinanceApproverCredential',
+            claims: {
+              approvalLimit,
+            },
+          },
+        ],
         approvalLimit,
         message: 'Demo setup complete - Alice credentials loaded',
       });

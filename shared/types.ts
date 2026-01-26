@@ -120,6 +120,7 @@ export interface Expense {
   rejectedBy?: string;
   rejectedAt?: string;
   notes?: string;
+  receipts?: string[];
 }
 
 export interface ExpenseApprovalRequest {
@@ -256,6 +257,10 @@ export interface AgentSession {
     holder: string;
     credentials: string[];
   };
+  messages: Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+  }>;
 }
 
 export interface ChatRequest {
