@@ -96,6 +96,9 @@ const INITIAL_EXPENSES: Expense[] = [
 // In-memory expense storage
 let expenses: Expense[] = JSON.parse(JSON.stringify(INITIAL_EXPENSES));
 
+// Single-use JWT tracking (for VC-protected mode tokens)
+const consumedTokenIds = new Set<string>();
+
 // ============================================================
 // Token Validation Middleware
 // ============================================================
@@ -148,6 +151,17 @@ function hasScope(scopes: string, required: string): boolean {
  * Token validation middleware.
  * Verifies JWT and extracts claims.
  */
+/**
+ * Derive the required scope from the request path and method.
+ * Included in 401 responses so the client knows what to request.
+ */
+function requiredScopeForRequest(req: Request): string {
+  if (req.path.endsWith('/approve')) return 'expense:approve';
+  if (req.path.endsWith('/reject')) return 'expense:approve';
+  if (req.method === 'POST' && req.path === '/expenses') return 'expense:submit';
+  return 'expense:view';
+}
+
 async function validateToken(
   req: Request,
   res: Response,
@@ -156,9 +170,12 @@ async function validateToken(
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const scope = requiredScopeForRequest(req);
+    res.setHeader('WWW-Authenticate', `Bearer realm="expense-api", scope="${scope}"`);
     res.status(401).json({
       error: 'unauthorized',
       message: 'No bearer token provided',
+      required_scope: scope,
     });
     return;
   }
@@ -198,12 +215,28 @@ async function validateToken(
       return;
     }
 
+    const tokenMode = (result.payload as Record<string, unknown>).token_mode as string | undefined;
+
+    // Single-use enforcement for VC-protected tokens
+    if (tokenMode !== 'demo') {
+      const jti = result.payload!.jti;
+      if (consumedTokenIds.has(jti)) {
+        res.status(401).json({
+          error: 'unauthorized',
+          message: 'Token has already been used (single-use enforcement)',
+        });
+        return;
+      }
+      consumedTokenIds.add(jti);
+    }
+
     // Attach token info to request
     req.token = {
       sub: result.payload!.sub,
       scope: result.payload!.scope || '',
       exp: result.payload!.exp,
       jti: result.payload!.jti,
+      token_mode: tokenMode as 'demo' | 'vc' | undefined,
       claims: result.payload!.claims as Record<string, unknown>,
     };
 
@@ -500,89 +533,6 @@ async function main() {
   );
 
   // ============================================================
-  // Unprotected Endpoint (no auth - demo "before VCs" comparison)
-  // ============================================================
-
-  /**
-   * POST /expenses/:id/approve-unprotected
-   *
-   * Approve an expense WITHOUT token validation or ceiling check.
-   * This endpoint exists solely for the demo's "before VCs" comparison.
-   * It accepts the agent's decision directly — no JWT, no ceiling.
-   *
-   * The `ceiling: null` in the response makes it visually obvious
-   * that no cryptographic constraint was applied.
-   */
-  app.post('/expenses/:id/approve-unprotected', (req: Request, res: Response) => {
-    // Guard: only available in demo mode (default: true for this demo application)
-    const demoMode = process.env.DEMO_MODE !== 'false';
-    if (!demoMode) {
-      res.status(404).json({
-        error: 'not_found',
-        message: 'Unprotected endpoint is only available when DEMO_MODE is enabled',
-      });
-      return;
-    }
-
-    const expense = expenses.find((e) => e.id === req.params.id);
-
-    if (!expense) {
-      res.status(404).json({
-        error: 'not_found',
-        message: 'Expense not found',
-      });
-      return;
-    }
-
-    if (expense.status !== 'pending') {
-      res.status(400).json({
-        error: 'invalid_state',
-        message: `Expense is already ${expense.status}`,
-      });
-      return;
-    }
-
-    const { agentReasoning } = req.body as {
-      approved?: boolean;
-      agentReasoning?: string;
-      amount?: number;
-    };
-
-    // NO CEILING CHECK — this is the point.
-    // The agent decided to approve, and there's nothing stopping it.
-    expense.status = 'approved';
-    expense.approvedBy = 'llm-agent (unprotected)';
-    expense.approvedAt = new Date().toISOString();
-    if (agentReasoning) {
-      expense.notes = agentReasoning;
-    }
-
-    auditLogger.log('expense_approval_unprotected' as Parameters<typeof auditLogger.log>[0], {
-      expenseId: expense.id,
-      expenseAmount: expense.amount,
-      approvalCeiling: null,
-      withinCeiling: null,
-      decision: 'approved',
-      protected: false,
-      agentReasoning: agentReasoning || 'No reasoning provided',
-    });
-
-    console.log(
-      `[Expense API] UNPROTECTED APPROVAL: $${expense.amount} approved without ceiling check`
-    );
-
-    res.json({
-      approved: true,
-      expenseId: expense.id,
-      amount: expense.amount,
-      ceiling: null,
-      approvedBy: 'llm-agent (unprotected)',
-      approvedAt: expense.approvedAt,
-      warning: 'Approved without cryptographic verification — no ceiling enforced',
-    });
-  });
-
-  // ============================================================
   // Demo Endpoints (no auth required)
   // ============================================================
 
@@ -592,8 +542,9 @@ async function main() {
    */
   app.post('/demo/reset', (req: Request, res: Response) => {
     expenses = JSON.parse(JSON.stringify(INITIAL_EXPENSES));
+    consumedTokenIds.clear();
     auditLogger.clear();
-    console.log('[Expense API] Demo reset - expenses restored to initial state');
+    console.log('[Expense API] Demo reset - expenses restored, consumed tokens cleared');
 
     res.json({
       message: 'Expenses reset to initial state',

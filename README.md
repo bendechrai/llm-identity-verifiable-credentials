@@ -1,6 +1,6 @@
 # LLM Identity Demo
 
-Demo application for "Building Identity into LLM Workflows with Verifiable Credentials" - NDC London 2026.
+Demo application for "Building Identity into LLM Workflows with Verifiable Credentials".
 
 ## Architecture
 

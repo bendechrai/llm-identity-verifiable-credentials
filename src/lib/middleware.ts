@@ -95,7 +95,27 @@ export interface TokenInfo {
   scope: string;
   exp: number;
   jti: string;
+  token_mode?: 'demo' | 'vc';
   claims?: Record<string, unknown>;
+}
+
+/**
+ * Set SSE headers on a response.
+ * Call before streaming events.
+ */
+export function setSseHeaders(res: Response): void {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+  res.flushHeaders();
+}
+
+/**
+ * Send an SSE event to a response stream.
+ */
+export function sendSseEvent(res: Response, event: string, data: unknown): void {
+  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
 /**

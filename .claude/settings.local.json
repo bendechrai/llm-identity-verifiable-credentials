@@ -28,7 +28,23 @@
       "Bash(chmod:*)",
       "Bash(npm run dev:*)",
       "Bash(npm install:*)",
-      "Bash(npm run dev:validate-docker:*)"
+      "Bash(npm run dev:validate-docker:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(curl:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(ss:*)",
+      "Bash(docker port:*)",
+      "Bash(lsof:*)",
+      "Bash(docker inspect:*)",
+      "Bash(docker compose ps:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker version:*)",
+      "Bash(docker info:*)",
+      "Bash(docker compose restart:*)",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:spec.modelcontextprotocol.io)",
+      "WebFetch(domain:auth0.com)"
     ]
   }
 }

@@ -74,6 +74,8 @@ export {
   notFoundHandler,
   createApp,
   startServer,
+  setSseHeaders,
+  sendSseEvent,
   type TokenInfo,
 } from './middleware.js';
 

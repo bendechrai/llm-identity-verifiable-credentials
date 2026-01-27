@@ -248,7 +248,22 @@ async function main() {
       console.log(`[VC Wallet] Created presentation with ${credentials.length} credential(s)`);
       console.log(`[VC Wallet] Challenge: ${challenge}, Domain: ${domain}`);
 
-      res.json(signedPresentation);
+      // Extract approval limit from FinanceApproverCredential for demo metadata
+      const finCred = credentials.find(c => c.type.includes('FinanceApproverCredential'));
+      const approvalLimit = finCred
+        ? (finCred.credentialSubject as { approvalLimit?: number }).approvalLimit
+        : undefined;
+
+      res.json({
+        presentation: signedPresentation,
+        _demo_metadata: approvalLimit !== undefined ? {
+          credentialLimits: {
+            approvalLimit,
+            currency: 'USD',
+          },
+          note: 'Derived from FinanceApproverCredential. This limit is signed by the issuer and cannot be inflated.',
+        } : undefined,
+      });
     } catch (error) {
       next(error);
     }

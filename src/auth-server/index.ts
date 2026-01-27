@@ -47,6 +47,7 @@ const trustedIssuers = new Set<string>();
 interface NonceEntry {
   nonce: string;
   domain: string;
+  requestedScope: string; // The scope the client originally asked for (least privilege)
   createdAt: number;
   expiresAt: number;
   used: boolean;
@@ -71,11 +72,12 @@ function generateNonce(): string {
 /**
  * Store a nonce with TTL
  */
-function storeNonce(nonce: string, domain: string): NonceEntry {
+function storeNonce(nonce: string, domain: string, requestedScope: string): NonceEntry {
   const now = Date.now();
   const entry: NonceEntry = {
     nonce,
     domain,
+    requestedScope,
     createdAt: now,
     expiresAt: now + NONCE_TTL_SECONDS * 1000,
     used: false,
@@ -210,32 +212,49 @@ async function main() {
 
   /**
    * POST /auth/presentation-request
-   * Generate a nonce and return credential requirements
+   * Generate a nonce and return credential requirements.
+   *
+   * Accepts an `action` scope (e.g. "expense:view", "expense:approve")
+   * and returns only the credentials needed for that action — principle
+   * of least privilege. The requested scope is stored with the nonce so
+   * the issued JWT is restricted to it.
    */
-  app.post('/auth/presentation-request', (_req, res) => {
-    // Generate nonce
-    const nonce = generateNonce();
-    const domain = 'expense-api'; // The intended audience
+  app.post('/auth/presentation-request', (req, res) => {
+    const { action, resource } = req.body as {
+      action?: string;
+      resource?: string;
+    };
 
-    // Store nonce
-    storeNonce(nonce, domain);
+    const nonce = generateNonce();
+    const domain = resource || 'expense-api';
+    const requestedScope = action || '';
+
+    // Store nonce with the requested scope for later restriction
+    storeNonce(nonce, domain, requestedScope);
+
+    // Determine which credentials are needed based on the requested action.
+    // Only approval operations require the FinanceApproverCredential.
+    const credentialsRequired: PresentationRequest['credentialsRequired'] = [
+      {
+        type: 'EmployeeCredential',
+        purpose: 'Verify employment status',
+      },
+    ];
+
+    if (requestedScope.startsWith('expense:approve')) {
+      credentialsRequired.push({
+        type: 'FinanceApproverCredential',
+        purpose: 'Verify approval authority',
+      });
+    }
 
     const presentationRequest: PresentationRequest = {
       challenge: nonce,
       domain,
-      credentialsRequired: [
-        {
-          type: 'EmployeeCredential',
-          purpose: 'Verify employment status',
-        },
-        {
-          type: 'FinanceApproverCredential',
-          purpose: 'Verify approval authority',
-        },
-      ],
+      credentialsRequired,
     };
 
-    console.log(`[Auth Server] Generated challenge: ${nonce}`);
+    console.log(`[Auth Server] Generated challenge: ${nonce} (scope: ${requestedScope || 'all'}, credentials: ${credentialsRequired.map(c => c.type).join(', ')})`);
 
     res.json({
       presentationRequest,
@@ -396,7 +415,21 @@ async function main() {
       }
 
       // Step 5: Derive scopes SERVER-SIDE (client cannot inflate)
-      const { scopes, claims } = deriveScopesFromCredentials(credentials);
+      const derived = deriveScopesFromCredentials(credentials);
+
+      // Restrict to the scope originally requested (least privilege).
+      // The credentials prove *capability*; the nonce tracks *intent*.
+      // The JWT should only grant what was asked for, not everything
+      // the credentials could theoretically support.
+      let scopes = derived.scopes;
+      const claims = derived.claims;
+      if (nonceEntry.requestedScope) {
+        scopes = scopes.filter(s => {
+          // "expense:approve:max:10000" should match requested "expense:approve"
+          const base = s.split(':').slice(0, 2).join(':');
+          return nonceEntry.requestedScope.startsWith(base);
+        });
+      }
 
       // Step 6: Issue JWT
       const tokenId = uuidv4();
@@ -410,6 +443,7 @@ async function main() {
         iat: now,
         jti: tokenId,
         scope: scopes.join(' '),
+        token_mode: 'vc',
         claims,
       };
 
@@ -496,6 +530,59 @@ async function main() {
         credentialTypes: ['EmployeeCredential', 'FinanceApproverCredential'],
       })),
     });
+  });
+
+  /**
+   * POST /auth/demo-token
+   * Issue a long-lived JWT without requiring a VP.
+   * Used in JWT-only mode (Act 1) to demonstrate bearer token vulnerability.
+   * The token has realistic scopes (same $10k ceiling) but is long-lived and reusable.
+   */
+  app.post('/auth/demo-token', async (req, res, next) => {
+    try {
+      const { holder } = req.body as { holder?: string };
+      const tokenId = uuidv4();
+      const now = Math.floor(Date.now() / 1000);
+      const DEMO_TOKEN_EXPIRY = 3600; // 1 hour
+
+      const jwtPayload: JwtPayload = {
+        iss: authDid,
+        sub: holder || 'alice@acme.corp',
+        aud: 'expense-api',
+        exp: now + DEMO_TOKEN_EXPIRY,
+        iat: now,
+        jti: tokenId,
+        scope: 'expense:view expense:submit expense:approve:max:10000',
+        token_mode: 'demo',
+        claims: {
+          employeeId: 'EMP-001',
+          name: 'Alice Chen',
+          approvalLimit: 10000,
+        },
+      };
+
+      const token = await signJwt(jwtPayload, authKeyPair, `${authDid}#${authKeyPair.publicKeyMultibase}`);
+
+      auditLogger.log('demo_token_issued' as Parameters<typeof auditLogger.log>[0], {
+        tokenId,
+        holder: holder || 'alice@acme.corp',
+        scope: jwtPayload.scope,
+        expiresIn: DEMO_TOKEN_EXPIRY,
+        tokenMode: 'demo',
+      });
+
+      console.log(`[Auth Server] Issued demo token for ${holder || 'alice@acme.corp'}`);
+
+      res.json({
+        access_token: token,
+        token_type: 'Bearer',
+        expires_in: DEMO_TOKEN_EXPIRY,
+        scope: jwtPayload.scope,
+        claims: jwtPayload.claims,
+      });
+    } catch (error) {
+      next(error);
+    }
   });
 
   /**

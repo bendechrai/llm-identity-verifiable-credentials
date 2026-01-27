@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # VC Issuer - Issues employment and finance approver credentials
   vc-issuer:
@@ -15,6 +13,7 @@ services:
       - PORT=3001
     volumes:
       - ./src/vc-issuer:/app/src/vc-issuer
+      - ./src/lib:/app/src/lib
       - ./shared:/app/shared
       - issuer-keys:/app/keys
     networks:
@@ -41,6 +40,7 @@ services:
       - ISSUER_URL=http://vc-issuer:3001
     volumes:
       - ./src/vc-wallet:/app/src/vc-wallet
+      - ./src/lib:/app/src/lib
       - ./shared:/app/shared
       - wallet-keys:/app/keys
     depends_on:
@@ -71,6 +71,7 @@ services:
       - TOKEN_EXPIRY_SECONDS=60
     volumes:
       - ./src/auth-server:/app/src/auth-server
+      - ./src/lib:/app/src/lib
       - ./shared:/app/shared
       - auth-keys:/app/keys
     depends_on:
@@ -100,6 +101,7 @@ services:
       - AUTH_SERVER_URL=http://auth-server:3003
     volumes:
       - ./src/expense-api:/app/src/expense-api
+      - ./src/lib:/app/src/lib
       - ./shared:/app/shared
     depends_on:
       auth-server:
@@ -113,7 +115,7 @@ services:
       retries: 3
       start_period: 10s
 
-  # LLM Agent - Orchestrates the authorization flow
+  # LLM Agent - Orchestrates the authorization flow (deterministic, no external LLM)
   llm-agent:
     build:
       context: .
@@ -125,15 +127,12 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3004
-      - LLM_MODE=${LLM_MODE:-mock}
-      - OLLAMA_URL=http://host.docker.internal:11434
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - AUTH_SERVER_URL=http://auth-server:3003
       - EXPENSE_API_URL=http://expense-api:3005
       - WALLET_URL=http://vc-wallet:3002
     volumes:
       - ./src/llm-agent:/app/src/llm-agent
+      - ./src/lib:/app/src/lib
       - ./shared:/app/shared
     depends_on:
       auth-server:
@@ -142,8 +141,6 @@ services:
         condition: service_healthy
       vc-wallet:
         condition: service_healthy
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - demo-network
     healthcheck:
@@ -153,22 +150,27 @@ services:
       retries: 3
       start_period: 10s
 
-  # Demo UI - Presentation interface
+  # Demo UI - Presentation interface (proxies API calls to backend services)
   demo-ui:
     build:
       context: .
-      dockerfile: Dockerfile.ui
+      dockerfile: Dockerfile
+      args:
+        SERVICE: demo-ui
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - LLM_AGENT_URL=http://llm-agent:3004
-      - AUTH_SERVER_URL=http://auth-server:3003
-      - EXPENSE_API_URL=http://expense-api:3005
-      - WALLET_URL=http://vc-wallet:3002
+      - AGENT_HOST=llm-agent
+      - AGENT_PORT=3004
+      - AUTH_HOST=auth-server
+      - AUTH_PORT=3003
+      - EXPENSE_HOST=expense-api
+      - EXPENSE_PORT=3005
     volumes:
       - ./src/demo-ui:/app/src/demo-ui
+      - ./src/lib:/app/src/lib
       - ./shared:/app/shared
     depends_on:
       llm-agent:
@@ -181,21 +183,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  # Ralph - Autonomous Claude Code runner
-  ralph:
-    build:
-      context: .
-      dockerfile: Dockerfile.ralph
-    environment:
-      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-    volumes:
-      - .:/home/ralph/project
-      - /var/run/docker.sock:/var/run/docker.sock
-    working_dir: /home/ralph/project
-    networks:
-      - demo-network
 
 networks:
   demo-network:
