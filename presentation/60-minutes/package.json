@@ -1,0 +1,14 @@
+{
+  "name": "vc-llm-talk-60min",
+  "version": "1.0.0",
+  "description": "60-minute version of Building Identity into LLM Workflows with Verifiable Credentials",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {
+    "reveal.js": "^5.1.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
