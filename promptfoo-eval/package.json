@@ -1,15 +1,28 @@
 {
   "name": "llm-identity-demo-eval",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
-  "description": "Promptfoo evaluation for LLM identity demo - tests system prompt resilience across models",
+  "description": "Promptfoo evaluation suite — prompt-level, red team, live agent, and multi-turn testing",
   "scripts": {
     "eval": "npx promptfoo eval",
     "eval:no-cache": "npx promptfoo eval --no-cache",
     "eval:export": "npx promptfoo eval -o ../src/demo-ui/eval-results.json",
-    "view": "npx promptfoo view"
+    "eval:html": "npx promptfoo eval -o eval-report.html",
+    "view": "npx promptfoo view",
+
+    "eval:live": "npx promptfoo eval -c live-agent.yaml",
+    "eval:live:view": "npx promptfoo eval -c live-agent.yaml && npx promptfoo view",
+
+    "redteam": "npx promptfoo redteam eval -c redteam.yaml",
+    "redteam:view": "npx promptfoo redteam eval -c redteam.yaml && npx promptfoo view",
+
+    "eval:multi-turn": "npx promptfoo eval -c multi-turn.yaml",
+    "eval:multi-turn:view": "npx promptfoo eval -c multi-turn.yaml && npx promptfoo view",
+
+    "eval:all": "npm run eval && npm run eval:multi-turn && npm run redteam",
+    "eval:all:export": "npm run eval:html && npx promptfoo eval -c multi-turn.yaml -o multi-turn-report.html && npx promptfoo redteam eval -c redteam.yaml -o redteam-report.html"
   },
   "dependencies": {
-    "promptfoo": "^0.99.0"
+    "promptfoo": "^0.120.0"
   }
 }

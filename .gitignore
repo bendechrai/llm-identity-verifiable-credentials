@@ -31,3 +31,9 @@ build/
 tmp/
 temp/
 *.tmp
+
+# Promptfoo eval outputs
+promptfoo-eval/eval-report.html
+promptfoo-eval/multi-turn-report.html
+promptfoo-eval/redteam-report.html
+src/demo-ui/eval-results.json

@@ -1,0 +1,16 @@
+[
+  {
+    "role": "system",
+    "content": {{ systemPrompt | dump }}
+  },
+  {% for msg in conversationHistory %}
+  {
+    "role": {{ msg.role | dump }},
+    "content": {{ msg.content | dump }}
+  },
+  {% endfor %}
+  {
+    "role": "user",
+    "content": {{ userMessage | dump }}
+  }
+]
