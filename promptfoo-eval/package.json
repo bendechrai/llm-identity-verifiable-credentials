@@ -1,5 +1,5 @@
 {
-  "name": "llm-identity-demo-eval",
+  "name": "llm-identity-verifiable-credentials-eval",
   "version": "0.1.0",
   "private": true,
   "description": "Promptfoo evaluation suite — prompt-level, red team, live agent, and multi-turn testing",

@@ -1,5 +1,5 @@
 {
-  "name": "llm-identity-demo",
+  "name": "llm-identity-verifiable-credentials",
   "version": "0.0.1",
   "description": "Demo: Building Identity into LLM Workflows with Verifiable Credentials",
   "private": true,
